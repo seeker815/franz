@@ -10,6 +10,14 @@ Object(Discover) { |o|
     discoveries = opts[:discoveries] || []
     deletions   = opts[:deletions]   || []
     rest        = opts[:rest]        || 1
+
+    configs = configs.map do |config|
+      config[:includes]  ||= []
+      config[:excludes]  ||= []
+      config[:multiline] ||= nil
+      config
+    end
+
     Thread.new do
       known = []
       loop do
@@ -37,8 +45,8 @@ private
   o.discover = ->(configs, known) {
     discovered = []
     configs.each do |config|
-      includes = config[:includes] || []
-      excludes = config[:excludes] || []
+      includes = config[:includes]
+      excludes = config[:excludes]
       includes.each do |glob|
         Dir[glob].each do |path|
           next if excludes.any? { |exclude| File.fnmatch? exclude, path }

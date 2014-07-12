@@ -1,35 +1,22 @@
 #!/usr/bin/env ruby
+require 'json'
 
-require_relative './discover'
-require_relative './watch'
-require_relative './tail'
+require_relative './input'
 
-discoveries  = Queue.new
-deletions    = Queue.new
-watch_events = Queue.new
-tail_events  = Queue.new
-
-configs = [{
-  type: :test,
-  includes: %w[ * ],
-  excludes: %w[ *.rb ],
+input = Input.new [{
+  type: :one,
+  includes: %w[ test.1.log ],
   multiline: /.*/
+}, {
+  type: :two,
+  includes: %w[ test.2.log ]
+}, {
+  type: :three,
+  includes: %w[ test.3*.log ],
+  excludes: %w[ test.3.log ],
+  multiline: /^\[/
 }]
 
-Discover.new \
-  discoveries: discoveries,
-  deletions: deletions,
-  configs: configs
-
-Watch.new \
-  discoveries: discoveries,
-  deletions: deletions,
-  watch_events: watch_events
-
-Tail.new \
-  watch_events: watch_events,
-  tail_events: tail_events
-
 loop do
-  puts tail_events.shift.inspect
+  puts input.shift.inspect
 end
