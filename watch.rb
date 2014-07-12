@@ -9,49 +9,53 @@ Watch.extend FileHelpers
 Object(Watch) { |o|
 
   o.new = ->(opts) {
-    discoveries  = opts[:discoveries]  || []
-    deletions    = opts[:deletions]    || []
-    watch_events = opts[:watch_events] || []
-    rest         = opts[:rest]         || 1
+    @discoveries  = opts[:discoveries]  || []
+    @deletions    = opts[:deletions]    || []
+    @watch_events = opts[:watch_events] || []
+    @interval     = opts[:interval]         || 1
+
+    @stats, @types = {}, {}
+
     Thread.new do
-      stats, types = {}, {}
       loop do
         until discoveries.empty?
-          path, type = discoveries.pop
-          stats[path] = nil
-          types[path] = type
+          d = discoveries.pop 
+          stats[d[:path]] = nil
+          types[d[:path]] = d[:type]
         end
-        stats = watch stats, types, discoveries, deletions, watch_events
-        sleep rest
+        watch
+        sleep interval
       end
     end
   }
 
 private
-  o.enqueue = ->(q, name, type, path, old_stat, new_stat) {
+  attr_reader :discoveries, :deletions, :watch_events, :interval, :stats, :types
+
+  o.enqueue = ->(name, type, path, old_stat, new_stat) {
     norm_stat = name == :created ? nil : new_stat
-    q.push name: name, type: type, path: path, old_stat: old_stat, new_stat: norm_stat
+    watch_events.push name: name, type: type, path: path, old_stat: old_stat, new_stat: norm_stat
   }
 
-  o.watch = ->(stats, types, discoveries, deletions, q) {
+  o.watch = -> {
     deleted = []
     stats.each do |path, old_stat|
       new_stat = stat_for path
       stats[path] = new_stat
 
       if file_created? old_stat, new_stat
-        enqueue q, :created, types[path], path, old_stat, new_stat
+        enqueue :created, types[path], path, old_stat, new_stat
       elsif file_deleted? old_stat, new_stat
-        enqueue q, :deleted, types[path], path, old_stat, new_stat
+        enqueue :deleted, types[path], path, old_stat, new_stat
         deleted.push path # deal with this below
       end
 
       if file_replaced? old_stat, new_stat
-        enqueue q, :replaced, types[path], path, old_stat, new_stat
+        enqueue :replaced, types[path], path, old_stat, new_stat
       elsif file_appended? old_stat, new_stat
-        enqueue q, :appended, types[path], path, old_stat, new_stat
+        enqueue :appended, types[path], path, old_stat, new_stat
       elsif file_truncated? old_stat, new_stat
-        enqueue q, :truncated, types[path], path, old_stat, new_stat
+        enqueue :truncated, types[path], path, old_stat, new_stat
       end
     end
 
@@ -59,6 +63,5 @@ private
       stats.delete path
       deletions.push path
     end
-    return stats
   }
 }

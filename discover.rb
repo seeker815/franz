@@ -6,32 +6,36 @@ Discover = Object.new
 
 Object(Discover) { |o|
   o.new = ->(opts) {
-    configs     = opts[:configs]     || []
-    discoveries = opts[:discoveries] || []
-    deletions   = opts[:deletions]   || []
-    rest        = opts[:rest]        || 1
+    @configs     = opts[:configs]     || []
+    @discoveries = opts[:discoveries] || []
+    @deletions   = opts[:deletions]   || []
+    @interval    = opts[:interval]    || 1
 
-    configs = configs.map do |config|
+    @configs = configs.map do |config|
       config[:includes]  ||= []
       config[:excludes]  ||= []
       config[:multiline] ||= nil
       config
     end
 
+    @known = []
+
     Thread.new do
-      known = []
       loop do
         known.delete deletions.pop until deletions.empty?
-        discovered = discover configs, known
-        known += discovered.map(&:first)
-        discoveries.push discovered.pop until discovered.empty?
-        sleep rest
+        discover.each do |discovery|
+          discoveries.push discovery
+          known.push discovery[:path]
+        end
+        sleep interval
       end
     end
   }
 
 private
-  o.type_given = ->(path, configs) {
+  attr_reader :configs, :discoveries, :deletions, :interval, :known
+
+  o.type = ->(path) {
     configs.each do |config|
       return config[:type] if config[:includes].any? { |glob|
         File.fnmatch?(glob, path) && !config[:excludes].any? { |xglob|
@@ -42,17 +46,15 @@ private
     return nil
   }
 
-  o.discover = ->(configs, known) {
+  o.discover = -> {
     discovered = []
     configs.each do |config|
-      includes = config[:includes]
-      excludes = config[:excludes]
-      includes.each do |glob|
+      config[:includes].each do |glob|
         Dir[glob].each do |path|
-          next if excludes.any? { |exclude| File.fnmatch? exclude, path }
+          next if config[:excludes].any? { |exclude| File.fnmatch? exclude, path }
           next if known.include? path
           next unless File.file? path
-          discovered.push [ path, type_given(path, configs) ]
+          discovered.push path: path, type: type(path)
         end
       end
     end

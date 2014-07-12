@@ -7,8 +7,12 @@ require_relative './multiline'
 Input = Object.new
 
 Object(Input) { |o|
-  o.new = ->(configs) {
-    @configs = configs
+  o.new = ->(opts={}) {
+    opts = {
+      configs: [],
+      discover_interval: nil,
+      watch_interval: nil
+    }.merge(opts)
 
     discoveries  = Queue.new
     deletions    = Queue.new
@@ -19,19 +23,21 @@ Object(Input) { |o|
     Discover.new \
       discoveries: discoveries,
       deletions: deletions,
-      configs: configs
+      configs: opts[:configs],
+      interval: opts[:discover_interval]
 
     Watch.new \
       discoveries: discoveries,
       deletions: deletions,
-      watch_events: watch_events
+      watch_events: watch_events,
+      interval: opts[:watch_interval]
 
     Tail.new \
       watch_events: watch_events,
       tail_events: tail_events
 
     Multiline.new \
-      configs: configs,
+      configs: opts[:configs],
       tail_events: tail_events,
       multiline_events: input_events
 

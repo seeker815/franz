@@ -9,28 +9,30 @@ Tail = Object.new
 Object(Tail) { |o|
 
   o.new = ->(opts) {
-    watch_events = opts[:watch_events] || []
-    tail_events  = opts[:tail_events]  || []
+    @watch_events = opts[:watch_events] || []
+    @tail_events  = opts[:tail_events]  || []
+
+    @file   = Hash.new
+    @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
 
     Thread.new do
-      file, buffer = {}, Hash.new { |h, k| h[k] = BufferedTokenizer.new }
       loop do
         watch_event = watch_events.shift
         case watch_event[:name]
         when :created
-          file = open file, watch_event
+          open watch_event
         when :replaced
-          file = close file, watch_event
-          file = open file, watch_event
-          file, buffer = read file, buffer, watch_event, tail_events
+          close watch_event
+          open watch_event
+          read watch_event
         when :truncated
-          file = close file, watch_event
-          file = open file, watch_event
-          file, buffer = read file, buffer, watch_event, tail_events
+          close file, watch_event
+          open file, watch_event
+          read watch_event
         when :appended
-          file, buffer = read file, buffer, watch_event, tail_events
+          read watch_event
         when :deleted
-          file = close file, watch_event
+          close watch_event
         else
           raise 'Invalid watch event'
         end
@@ -41,28 +43,27 @@ Object(Tail) { |o|
   }
 
 private
-  o.open = ->(file, event) {
+  attr_reader :watch_events, :tail_events, :file, :buffer
+
+  o.open = ->(event) {
     file[event[:path]] = File.open(event[:path])
     file[event[:path]].sysseek 0, IO::SEEK_SET
-    return file
   }
 
-  o.read = ->(file, buffer, event, q) {
+  o.read = ->(event) {
     until file[event[:path]].pos >= event[:new_stat][:size]
       begin
         data = file[event[:path]].sysread(1048576) # 1 MiB
         buffer[event[:path]].extract(data).each do |line|
-          q.push type: event[:type], path: event[:path], line: line
+          tail_events.push type: event[:type], path: event[:path], line: line
         end
       rescue EOFError
         # we're done here
       end
     end
-    return file, buffer
   }
 
-  o.close = ->(file, event) {
+  o.close = ->(event) {
     file.delete(event[:path]).close
-    return file
   }
 }
