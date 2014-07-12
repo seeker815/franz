@@ -12,7 +12,7 @@ Object(Watch) { |o|
     @discoveries  = opts[:discoveries]  || []
     @deletions    = opts[:deletions]    || []
     @watch_events = opts[:watch_events] || []
-    @interval     = opts[:interval]         || 1
+    @interval     = opts[:interval]     || 1
 
     @stats, @types = {}, {}
 
