@@ -2,10 +2,12 @@
 
 require_relative './discover'
 require_relative './watch'
+require_relative './tail'
 
-discoveries = Queue.new
-deletions = Queue.new
-events = Queue.new
+discoveries  = Queue.new
+deletions    = Queue.new
+watch_events = Queue.new
+tail_events  = Queue.new
 
 configs = [{
   type: :test,
@@ -22,9 +24,13 @@ Discover.new \
 Watch.new \
   discoveries: discoveries,
   deletions: deletions,
-  events: events
+  watch_events: watch_events
+
+Tail.new \
+  configs: configs,
+  watch_events: watch_events,
+  tail_events: tail_events
 
 loop do
-  event = events.shift
-  puts 'EVENT => %s' % event
+  puts tail_events.shift.inspect
 end
