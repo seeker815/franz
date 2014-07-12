@@ -39,8 +39,6 @@ class Tail
         end
       end
     end
-
-    return self
   end
 
 private
@@ -50,15 +48,15 @@ private
     pos = status.include?(event[:path]) ? status[event[:path]][:pos] : 0
     file[event[:path]] = File.open(event[:path])
     file[event[:path]].sysseek pos, IO::SEEK_SET
-    status[event[:path]] = { changed: Time.now.to_i, pos: pos }
+    status[event[:path]] = { pos: pos, stat: event[:new_stat], changed: Time.now.to_i }
   end
 
   def read event
     open event if file[event[:path]].nil?
+    status[event[:path]][:reading] = true
     until file[event[:path]].pos >= event[:new_stat][:size]
       begin
         data = file[event[:path]].sysread(1048576) # 1 MiB
-        status[event[:path]] = { changed: Time.now.to_i, pos: file[event[:path]].pos }
         buffer[event[:path]].extract(data).each do |line|
           tail_events.push type: event[:type], path: event[:path], line: line
         end
@@ -66,15 +64,20 @@ private
         # we're done here
       end
     end
+    status[event[:path]][:pos] = file[event[:path]].pos
+    status[event[:path]][:stat] = event[:new_stat]
+    status[event[:path]][:changed] = Time.now.to_i
+    status[event[:path]].delete(:reading)
   end
 
   def close event
-    file.delete(event[:path]).close
+    file.delete(event[:path]).close if file.include? event[:path]
     status.delete(event[:path])
   end
 
   def evict
     status.keys.each do |path|
+      next if status[path][:reading]
       next unless status[path][:changed] < Time.now.to_i - eviction_interval
       next unless file.include? path
       file.delete(path).close

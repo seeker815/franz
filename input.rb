@@ -6,8 +6,6 @@ require_relative './tail'
 require_relative './multiline'
 
 class Input
-  attr_reader :events
-
   def initialize opts={}
     opts = {
       queue: Queue.new,
