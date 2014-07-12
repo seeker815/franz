@@ -23,7 +23,10 @@ Object(Watch) { |o|
           stats[d[:path]] = nil
           types[d[:path]] = d[:type]
         end
-        watch
+        watch.each do |deleted|
+          stats.delete deleted
+          deletions.push deleted
+        end
         sleep interval
       end
     end
@@ -58,10 +61,6 @@ private
         enqueue :truncated, types[path], path, old_stat, new_stat
       end
     end
-
-    deleted.each do |path|
-      stats.delete path
-      deletions.push path
-    end
+    return deleted
   }
 }
