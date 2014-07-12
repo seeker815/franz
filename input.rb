@@ -1,14 +1,16 @@
-require_relative './object_builder'
+require 'thread'
+
 require_relative './discover'
 require_relative './watch'
 require_relative './tail'
 require_relative './multiline'
 
-Input = Object.new
+class Input
+  attr_reader :events
 
-Object(Input) { |o|
-  o.new = ->(opts={}) {
+  def initialize opts={}
     opts = {
+      queue: Queue.new,
       configs: [],
       discover_interval: nil,
       watch_interval: nil
@@ -18,7 +20,6 @@ Object(Input) { |o|
     deletions    = Queue.new
     watch_events = Queue.new
     tail_events  = Queue.new
-    input_events = Queue.new
 
     Discover.new \
       discoveries: discoveries,
@@ -39,8 +40,6 @@ Object(Input) { |o|
     Multiline.new \
       configs: opts[:configs],
       tail_events: tail_events,
-      multiline_events: input_events
-
-    return input_events
-  }
-}
+      multiline_events: opts[:queue]
+  end
+end

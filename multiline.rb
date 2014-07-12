@@ -1,13 +1,11 @@
-require_relative './object_builder'
+require 'thread'
+
 require_relative './sash'
 
 Thread.abort_on_exception = true
 
-Multiline = Object.new
-
-Object(Multiline) { |o|
-
-  o.new = ->(opts) {
+class Multiline
+  def initialize opts={}
     @configs          = opts[:configs]          || []
     @tail_events      = opts[:tail_events]      || []
     @multiline_events = opts[:multiline_events] || []
@@ -28,22 +26,20 @@ Object(Multiline) { |o|
         capture
       end
     end
-  }
+  end
 
 private
-  attr_reader :configs, :tail_events, :multiline_events, :flush_interval
+  attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :lock, :buffer, :seq
 
-  attr_reader :lock, :buffer, :seq
-
-  o.config_with_type = ->(type) {
+  def config_with_type type
     configs.select { |c| c[:type] == type }.shift
-  }
+  end
 
-  o.enqueue = ->(type, path, message) {
+  def enqueue type, path, message
     multiline_events.push type: type, path: path, message: message, seq: seq[path] += 1
-  }
+  end
 
-  o.capture = -> {
+  def capture 
     event     = tail_events.shift
     config    = config_with_type event[:type]
     multiline = config[:multiline]
@@ -62,9 +58,9 @@ private
         buffer.insert event[:path], event
       end
     end
-  }
+  end
 
-  o.flush = -> {
+  def flush 
     lock.synchronize do
       started = Time.now
       buffer.keys.each do |path|
@@ -77,5 +73,5 @@ private
         end
       end
     end
-  }
-}
+  end
+end

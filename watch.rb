@@ -1,14 +1,11 @@
-require_relative './object_builder'
 require_relative './file_helpers'
 
 Thread.abort_on_exception = true
 
-Watch = Object.new
-Watch.extend FileHelpers
+class Watch
+  include FileHelpers
 
-Object(Watch) { |o|
-
-  o.new = ->(opts) {
+  def initialize opts={}
     @discoveries  = opts[:discoveries]  || []
     @deletions    = opts[:deletions]    || []
     @watch_events = opts[:watch_events] || []
@@ -19,7 +16,7 @@ Object(Watch) { |o|
     Thread.new do
       loop do
         until discoveries.empty?
-          d = discoveries.pop 
+          d = discoveries.pop
           stats[d[:path]] = nil
           types[d[:path]] = d[:type]
         end
@@ -30,17 +27,17 @@ Object(Watch) { |o|
         sleep interval
       end
     end
-  }
+  end
 
 private
   attr_reader :discoveries, :deletions, :watch_events, :interval, :stats, :types
 
-  o.enqueue = ->(name, type, path, old_stat, new_stat) {
+  def enqueue name, type, path, old_stat, new_stat
     norm_stat = name == :created ? nil : new_stat
     watch_events.push name: name, type: type, path: path, old_stat: old_stat, new_stat: norm_stat
-  }
+  end
 
-  o.watch = -> {
+  def watch
     deleted = []
     stats.each do |path, old_stat|
       new_stat = stat_for path
@@ -62,5 +59,5 @@ private
       end
     end
     return deleted
-  }
-}
+  end
+end

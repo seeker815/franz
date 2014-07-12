@@ -1,14 +1,9 @@
 require 'buftok'
 
-require_relative './object_builder'
-
 Thread.abort_on_exception = true
 
-Tail = Object.new
-
-Object(Tail) { |o|
-
-  o.new = ->(opts) {
+class Tail
+  def initialize opts={}
     @watch_events      = opts[:watch_events]      || []
     @tail_events       = opts[:tail_events]       || []
     @eviction_interval = opts[:eviction_interval] || 5
@@ -29,14 +24,11 @@ Object(Tail) { |o|
         e = watch_events.shift
         case e[:name]
         when :created
-          open e
         when :replaced
           close e
-          open e
           read e
         when :truncated
           close e
-          open e
           read e
         when :appended
           read e
@@ -49,26 +41,20 @@ Object(Tail) { |o|
     end
 
     return self
-  }
+  end
 
 private
   attr_reader :watch_events, :tail_events, :eviction_interval, :file, :status, :buffer
 
-  o.open = ->(event, pos=0) {
+  def open event
+    pos = status.include?(event[:path]) ? status[event[:path]][:pos] : 0
     file[event[:path]] = File.open(event[:path])
     file[event[:path]].sysseek pos, IO::SEEK_SET
     status[event[:path]] = { changed: Time.now.to_i, pos: pos }
-  }
+  end
 
-  o.reopen = ->(event) {
-    if file[event[:path]].nil? && status.include?(event[:path])
-      open event, status[event[:path]][:pos]
-    end
-  }
-
-  o.read = ->(event) {
-    reopen event
-
+  def read event
+    open event if file[event[:path]].nil?
     until file[event[:path]].pos >= event[:new_stat][:size]
       begin
         data = file[event[:path]].sysread(1048576) # 1 MiB
@@ -80,18 +66,18 @@ private
         # we're done here
       end
     end
-  }
+  end
 
-  o.close = ->(event) {
+  def close event
     file.delete(event[:path]).close
     status.delete(event[:path])
-  }
+  end
 
-  o.evict = -> {
+  def evict
     status.keys.each do |path|
       next unless status[path][:changed] < Time.now.to_i - eviction_interval
       next unless file.include? path
       file.delete(path).close
     end
-  }
-}
+  end
+end

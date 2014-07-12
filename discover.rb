@@ -1,11 +1,7 @@
-require_relative './object_builder'
-
 Thread.abort_on_exception = true
 
-Discover = Object.new
-
-Object(Discover) { |o|
-  o.new = ->(opts) {
+class Discover
+  def initialize opts={}
     @configs     = opts[:configs]     || []
     @discoveries = opts[:discoveries] || []
     @deletions   = opts[:deletions]   || []
@@ -30,12 +26,12 @@ Object(Discover) { |o|
         sleep interval
       end
     end
-  }
+  end
 
 private
   attr_reader :configs, :discoveries, :deletions, :interval, :known
 
-  o.type = ->(path) {
+  def type path
     configs.each do |config|
       return config[:type] if config[:includes].any? { |glob|
         File.fnmatch?(glob, path) && !config[:excludes].any? { |xglob|
@@ -44,9 +40,9 @@ private
       }
     end
     return nil
-  }
+  end
 
-  o.discover = -> {
+  def discover
     discovered = []
     configs.each do |config|
       config[:includes].each do |glob|
@@ -59,5 +55,5 @@ private
       end
     end
     return discovered
-  }
-}
+  end
+end
