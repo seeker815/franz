@@ -27,7 +27,6 @@ Watch.new \
   watch_events: watch_events
 
 Tail.new \
-  configs: configs,
   watch_events: watch_events,
   tail_events: tail_events
 

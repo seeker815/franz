@@ -15,7 +15,7 @@ Object(Discover) { |o|
       loop do
         known.delete deletions.pop until deletions.empty?
         discovered = discover configs, known
-        known += discovered
+        known += discovered.map(&:first)
         discoveries.push discovered.pop until discovered.empty?
         sleep rest
       end
@@ -23,6 +23,17 @@ Object(Discover) { |o|
   }
 
 private
+  o.type_given = ->(path, configs) {
+    configs.each do |config|
+      return config[:type] if config[:includes].any? { |glob|
+        File.fnmatch?(glob, path) && !config[:excludes].any? { |xglob|
+          File.fnmatch?(xglob, path)
+        }
+      }
+    end
+    return nil
+  }
+
   o.discover = ->(configs, known) {
     discovered = []
     configs.each do |config|
@@ -33,7 +44,7 @@ private
           next if excludes.any? { |exclude| File.fnmatch? exclude, path }
           next if known.include? path
           next unless File.file? path
-          discovered.push path
+          discovered.push [ path, type_given(path, configs) ]
         end
       end
     end

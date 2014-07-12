@@ -9,7 +9,6 @@ Tail = Object.new
 Object(Tail) { |o|
 
   o.new = ->(opts) {
-    # configs      = opts[:configs]      || []
     watch_events = opts[:watch_events] || []
     tail_events  = opts[:tail_events]  || []
 
@@ -17,7 +16,7 @@ Object(Tail) { |o|
       file, buffer = {}, Hash.new { |h, k| h[k] = BufferedTokenizer.new }
       loop do
         watch_event = watch_events.shift
-        case watch_event[:type]
+        case watch_event[:name]
         when :created
           file = open file, watch_event
         when :replaced
@@ -33,41 +32,36 @@ Object(Tail) { |o|
         when :deleted
           file = close file, watch_event
         else
-          raise 'Invalid WatchEvent'
+          raise 'Invalid watch event'
         end
       end
     end
+
+    return self
   }
 
 private
   o.open = ->(file, event) {
-    puts 'open path=%s event=%s' % [ event[:path], event[:type] ]
     file[event[:path]] = File.open(event[:path])
     file[event[:path]].sysseek 0, IO::SEEK_SET
     return file
   }
 
   o.read = ->(file, buffer, event, q) {
-    puts 'read path=%s event=%s[%s..%s]' % [
-      event[:path], event[:type], event[:old_stat], event[:new_stat]
-    ]
-
     until file[event[:path]].pos >= event[:new_stat][:size]
       begin
         data = file[event[:path]].sysread(1048576) # 1 MiB
         buffer[event[:path]].extract(data).each do |line|
-          q.push path: event[:path], line: line
+          q.push type: event[:type], path: event[:path], line: line
         end
       rescue EOFError
         # we're done here
       end
     end
-
     return file, buffer
   }
 
   o.close = ->(file, event) {
-    puts 'close path=%s event=%s' % [ event[:path], event[:type] ]
     file.delete(event[:path]).close
     return file
   }
