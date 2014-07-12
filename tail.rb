@@ -48,13 +48,13 @@ private
     pos = status.include?(event[:path]) ? status[event[:path]][:pos] : 0
     file[event[:path]] = File.open(event[:path])
     file[event[:path]].sysseek pos, IO::SEEK_SET
-    status[event[:path]] = { pos: pos, stat: event[:new_stat], changed: Time.now.to_i }
+    status[event[:path]] = { pos: pos, stat: event[:stat], changed: Time.now.to_i }
   end
 
   def read event
     open event if file[event[:path]].nil?
     status[event[:path]][:reading] = true
-    until file[event[:path]].pos >= event[:new_stat][:size]
+    until file[event[:path]].pos >= event[:stat][:size]
       begin
         data = file[event[:path]].sysread(1048576) # 1 MiB
         buffer[event[:path]].extract(data).each do |line|
@@ -65,12 +65,13 @@ private
       end
     end
     status[event[:path]][:pos] = file[event[:path]].pos
-    status[event[:path]][:stat] = event[:new_stat]
+    status[event[:path]][:stat] = event[:stat]
     status[event[:path]][:changed] = Time.now.to_i
     status[event[:path]].delete(:reading)
   end
 
   def close event
+    status[event[:path]][:reading] = true # prevent evict from interrupting
     file.delete(event[:path]).close if file.include? event[:path]
     status.delete(event[:path])
   end

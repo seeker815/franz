@@ -1,32 +1,41 @@
 #!/usr/bin/env ruby
-require_relative './input'
+configs = [{
+  type: :test,
+  includes: %w[ test*log ],
+}]
 
-input = Queue.new
+# require_relative './input'
 
-Input.new \
-  queue: input,
-  configs: [{
-    type: :one,
-    includes: %w[ test.1.log ],
-    multiline: /.*/
-  }]
+# input = Queue.new
 
-Input.new \
-  queue: input,
-  configs: [{
-    type: :two,
-    includes: %w[ test.2.log ]
-  }]
+# Input.new \
+#   queue: input,
+#   configs: configs
 
-Input.new \
-  queue: input,
-  configs: [{
-    type: :three,
-    includes: %w[ test.3*.log ],
-    excludes: %w[ test.3.log ],
-    multiline: /^\[/
-  }]
 
-loop do
-  puts input.shift.inspect
+require_relative './discover'
+
+discoveries = Queue.new
+deletions   = Queue.new
+
+Discover.new \
+  discoveries: discoveries,
+  deletions: deletions,
+  configs: configs
+
+
+require_relative './watch'
+
+watch_events = Queue.new
+
+Watch.new \
+  discoveries: discoveries,
+  deletions: deletions,
+  watch_events: watch_events
+
+
+i = 0
+until i == 1_000_000
+  puts watch_events.shift.inspect
+  i += 1
 end

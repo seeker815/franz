@@ -17,8 +17,8 @@ class Watch
       loop do
         until discoveries.empty?
           d = discoveries.pop
-          stats[d[:path]] = nil
           types[d[:path]] = d[:type]
+          stats[d[:path]] = nil
         end
         watch.each do |deleted|
           stats.delete deleted
@@ -32,30 +32,30 @@ class Watch
 private
   attr_reader :discoveries, :deletions, :watch_events, :interval, :stats, :types
 
-  def enqueue name, type, path, old_stat, new_stat
-    norm_stat = name == :created ? nil : new_stat
-    watch_events.push name: name, type: type, path: path, old_stat: old_stat, new_stat: norm_stat
+  def enqueue name, type, path, stat
+    stat = name == :created ? nil : stat
+    watch_events.push name: name, type: type, path: path, stat: stat
   end
 
   def watch
     deleted = []
     stats.each do |path, old_stat|
-      new_stat = stat_for path
-      stats[path] = new_stat
+      stat = stat_for path
+      stats[path] = stat
 
-      if file_created? old_stat, new_stat
-        enqueue :created, types[path], path, old_stat, new_stat
-      elsif file_deleted? old_stat, new_stat
-        enqueue :deleted, types[path], path, old_stat, new_stat
+      if file_created? old_stat, stat
+        enqueue :created, types[path], path, stat
+      elsif file_deleted? old_stat, stat
+        enqueue :deleted, types[path], path, stat
         deleted.push path # deal with this below
       end
 
-      if file_replaced? old_stat, new_stat
-        enqueue :replaced, types[path], path, old_stat, new_stat
-      elsif file_appended? old_stat, new_stat
-        enqueue :appended, types[path], path, old_stat, new_stat
-      elsif file_truncated? old_stat, new_stat
-        enqueue :truncated, types[path], path, old_stat, new_stat
+      if file_replaced? old_stat, stat
+        enqueue :replaced, types[path], path, stat
+      elsif file_appended? old_stat, stat
+        enqueue :appended, types[path], path, stat
+      elsif file_truncated? old_stat, stat
+        enqueue :truncated, types[path], path, stat
       end
     end
     return deleted
