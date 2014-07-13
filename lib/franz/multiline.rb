@@ -1,10 +1,9 @@
 require 'thread'
 
-require_relative './sash'
+require_relative 'sash'
 
-Thread.abort_on_exception = true
 
-class Multiline
+class Franz::Multiline
   def initialize opts={}
     @configs          = opts[:configs]          || []
     @tail_events      = opts[:tail_events]      || []

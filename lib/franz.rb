@@ -1,0 +1,5 @@
+require_relative 'franz/discover'
+require_relative 'franz/watch'
+require_relative 'franz/tail'
+require_relative 'franz/multiline'
+require_relative 'franz/input'

@@ -1,9 +1,8 @@
-require_relative './file_helpers'
+require_relative 'helpers'
 
-Thread.abort_on_exception = true
 
 class Watch
-  include FileHelpers
+  include Franz::Helpers
 
   def initialize opts={}
     @discoveries  = opts[:discoveries]  || []

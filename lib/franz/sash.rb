@@ -1,3 +1,6 @@
+require 'thread'
+
+
 # Sash - A threadsafe hash/array hybrid with access times
 #
 #     s = Sash.new           # => #<Sash...>
@@ -8,8 +11,6 @@
 #     s.mtime :key           # => 2014-02-18 21:24:30 -0800
 #     s.flush :key           # => [:value, :crazy]
 #
-require 'thread'
-
 class Sash
   def initialize
     @mutex = Mutex.new

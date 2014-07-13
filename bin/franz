@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+# @author Sean Clemmer
+
+require 'thread'
+require 'franz'
+
+LIMIT = 2_000_000
+started = Time.now
+
+Thread.abort_on_exception = true
+
+include Franz
+
+configs = [{
+  type: :test,
+  includes: %w[ test.log ],
+}]
+
+
+discoveries = Queue.new
+deletions   = Queue.new
+
+Discover.new \
+  discoveries: discoveries,
+  deletions: deletions,
+  configs: configs
+
+
+watch_events = Queue.new
+
+Watch.new \
+  discoveries: discoveries,
+  deletions: deletions,
+  watch_events: watch_events
+
+
+tail_events = Queue.new
+
+Tail.new \
+  watch_events: watch_events,
+  tail_events: tail_events
+
+
+# input = Queue.new
+# Input.new \
+#   queue: input,
+#   configs: configs
+
+i = 0
+until i == LIMIT
+  puts tail_events.shift.inspect
+  i += 1
+end
+
+elapsed = Time.now - started
+$stderr.puts 'num events: %d [E]' % LIMIT
+$stderr.puts 'time elapsed: %.2f [s]' % elapsed
+$stderr.puts 'throughput: %.1f [E/s]' % [ LIMIT / elapsed ]

@@ -1,6 +1,8 @@
-Thread.abort_on_exception = true
+class Franz::Discover
 
-class Discover
+  # Create a new Discover object
+  #
+  # @param opts [Hash, nil] an options hash or nil for defaults
   def initialize opts={}
     @configs     = opts[:configs]     || []
     @discoveries = opts[:discoveries] || []

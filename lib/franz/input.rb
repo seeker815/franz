@@ -1,11 +1,12 @@
 require 'thread'
 
-require_relative './discover'
-require_relative './watch'
-require_relative './tail'
-require_relative './multiline'
+require_relative 'discover'
+require_relative 'watch'
+require_relative 'tail'
+require_relative 'multiline'
 
-class Input
+
+class Franz::Input
   def initialize opts={}
     opts = {
       queue: Queue.new,

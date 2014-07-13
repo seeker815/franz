@@ -1,0 +1,22 @@
+PATH
+  remote: .
+  specs:
+    franz (0.0.0)
+      buftok
+      colorize
+      trollop
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    buftok (0.2.0)
+    colorize (0.7.3)
+    ruby-prof (0.15.1)
+    trollop (2.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  franz!
+  ruby-prof

@@ -1,4 +1,5 @@
-module FileHelpers
+module Franz::Helpers
+
 private
   def file_created? old_stat, new_stat
     return !new_stat.nil? && old_stat.nil?
