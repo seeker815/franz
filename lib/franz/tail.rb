@@ -1,7 +1,9 @@
+require 'pathname'
+
 require 'buftok'
 
 
-class Tail
+class Franz::Tail
   def initialize opts={}
     @watch_events      = opts[:watch_events]      || []
     @tail_events       = opts[:tail_events]       || []
@@ -12,6 +14,8 @@ class Tail
     @cursor  = Hash.new
     @changed = Hash.new
     @reading = Hash.new
+
+    @block_size = 1024 # 1 KiB
 
     Thread.new do
       loop do
@@ -45,6 +49,10 @@ class Tail
 private
   attr_reader :watch_events, :tail_events, :eviction_interval, :file, :buffer
 
+  def realpath path
+    Pathname.new(path).realpath.to_s
+  end
+
   def open path
     pos = @cursor.include?(path) ? @cursor[path] : 0
     file[path] = File.open(path)
@@ -58,9 +66,9 @@ private
     @reading[path] = true
     until file[path].pos >= size
       begin
-        data = file[path].sysread(1048576) # 1 MiB
+        data = file[path].sysread @block_size
         buffer[path].extract(data).each do |line|
-          tail_events.push type: type, path: path, line: line
+          tail_events.push type: type, path: realpath(path), line: line
         end
       rescue EOFError
         # we're done here

@@ -1,58 +1,39 @@
 #!/usr/bin/env ruby
 # @author Sean Clemmer
-
 require 'thread'
+require 'bunny'
 require 'franz'
-
-LIMIT = 2_000_000
-started = Time.now
 
 Thread.abort_on_exception = true
 
-include Franz
-
 configs = [{
-  type: :test,
-  includes: %w[ test.log ],
+  type: :a,
+  includes: %w[ test.a.log ],
+}, {
+  type: :b,
+  includes: %w[ test.b.log ],
+}, {
+  type: :c,
+  includes: %w[ test.c.log ],
+}, {
+  type: :d,
+  includes: %w[ test.d.log ],
 }]
 
+input = Queue.new
 
-discoveries = Queue.new
-deletions   = Queue.new
+Franz::Input.new queue: input, configs: configs
 
-Discover.new \
-  discoveries: discoveries,
-  deletions: deletions,
-  configs: configs
+START = Time.now
+LIMIT = ARGV.first.to_i
+# i = 0
+# until i == LIMIT
+#   input.shift
+#   i += 1
+# end
+Franz::Output.new(input: input, limit: LIMIT).join
+ELAPSED = Time.now - START
 
-
-watch_events = Queue.new
-
-Watch.new \
-  discoveries: discoveries,
-  deletions: deletions,
-  watch_events: watch_events
-
-
-tail_events = Queue.new
-
-Tail.new \
-  watch_events: watch_events,
-  tail_events: tail_events
-
-
-# input = Queue.new
-# Input.new \
-#   queue: input,
-#   configs: configs
-
-i = 0
-until i == LIMIT
-  puts tail_events.shift.inspect
-  i += 1
-end
-
-elapsed = Time.now - started
 $stderr.puts 'num events: %d [E]' % LIMIT
-$stderr.puts 'time elapsed: %.2f [s]' % elapsed
-$stderr.puts 'throughput: %.1f [E/s]' % [ LIMIT / elapsed ]
+$stderr.puts 'time elapsed: %.2f [s]' % ELAPSED
+$stderr.puts 'throughput: %.1f [E/s]' % [ LIMIT / ELAPSED ]

@@ -1,7 +1,7 @@
 require_relative 'helpers'
 
 
-class Watch
+class Franz::Watch
   include Franz::Helpers
 
   def initialize opts={}
