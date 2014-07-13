@@ -15,7 +15,7 @@ class Franz::Tail
     @changed = Hash.new
     @reading = Hash.new
 
-    @block_size = 1024 # 1 KiB
+    @block_size = 5120 # 5 KiB
 
     Thread.new do
       loop do
@@ -31,12 +31,12 @@ class Franz::Tail
         when :created
         when :replaced
           close e[:path]
-          read e[:path], e[:stat][:size], e[:type]
+          read e[:path], e[:size], e[:type]
         when :truncated
           close e[:path]
-          read e[:path], e[:stat][:size], e[:type]
+          read e[:path], e[:size], e[:type]
         when :appended
-          read e[:path], e[:stat][:size], e[:type]
+          read e[:path], e[:size], e[:type]
         when :deleted
           close e[:path]
         else

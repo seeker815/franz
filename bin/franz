@@ -22,7 +22,8 @@ configs = [{
 
 input = Queue.new
 
-Franz::Input.new queue: input, configs: configs
+Franz::Input.new queue: input, configs: configs, \
+  disover_interval: 5, watch_interval: 2, eviction_interval: 10, flush_interval: 5
 
 START = Time.now
 LIMIT = ARGV.first.to_i
@@ -31,7 +32,7 @@ LIMIT = ARGV.first.to_i
 #   input.shift
 #   i += 1
 # end
-Franz::Output.new(input: input, limit: LIMIT).join
+Franz::Output.new input: input, limit: LIMIT, foreground: true
 ELAPSED = Time.now - START
 
 $stderr.puts 'num events: %d [E]' % LIMIT

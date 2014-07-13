@@ -31,9 +31,8 @@ class Franz::Watch
 private
   attr_reader :discoveries, :deletions, :watch_events, :interval, :stats, :types
 
-  def enqueue name, type, path, stat
-    stat = name == :created ? nil : stat
-    watch_events.push name: name, type: type, path: path, stat: stat
+  def enqueue name, type, path, size=0
+    watch_events.push name: name, type: type, path: path, size: size
   end
 
   def watch
@@ -43,18 +42,18 @@ private
       stats[path] = stat
 
       if file_created? old_stat, stat
-        enqueue :created, types[path], path, stat
+        enqueue :created, types[path], path
       elsif file_deleted? old_stat, stat
-        enqueue :deleted, types[path], path, stat
+        enqueue :deleted, types[path], path
         deleted.push path # deal with this below
       end
 
       if file_replaced? old_stat, stat
-        enqueue :replaced, types[path], path, stat
+        enqueue :replaced, types[path], path, stat[:size]
       elsif file_appended? old_stat, stat
-        enqueue :appended, types[path], path, stat
+        enqueue :appended, types[path], path, stat[:size]
       elsif file_truncated? old_stat, stat
-        enqueue :truncated, types[path], path, stat
+        enqueue :truncated, types[path], path, stat[:size]
       end
     end
     return deleted
