@@ -17,13 +17,11 @@ class Franz::Output
       :durable => true, :type => 'x-consistent-hash'
 
     t = Thread.new do
-      i = 0
       rand = Random.new
-      until i == opts[:limit]
+      loop do
         exchange.publish \
           JSON::generate(input.shift.merge(host: @@host)),
           persistent: false, routing_key: rand.rand(1_000_000)
-        i += 1
       end
     end
 

@@ -4,6 +4,7 @@ require_relative 'discover'
 require_relative 'watch'
 require_relative 'tail'
 require_relative 'multiline'
+require_relative 'bounded_queue'
 
 
 class Franz::Input
@@ -15,30 +16,37 @@ class Franz::Input
       watch_interval: nil
     }.merge(opts)
 
-    discoveries  = Queue.new
-    deletions    = Queue.new
-    watch_events = Queue.new
-    tail_events  = Queue.new
+    discoveries  = Franz::BoundedQueue.new 4096
+    deletions    = Franz::BoundedQueue.new 4096
+    watch_events = Franz::BoundedQueue.new 4096
+    tail_events  = Franz::BoundedQueue.new 4096
 
-    Franz::Discover.new \
+    @d = Franz::Discover.new \
       discoveries: discoveries,
       deletions: deletions,
       configs: opts[:configs],
       interval: opts[:discover_interval]
 
-    Franz::Watch.new \
+    @w = Franz::Watch.new \
       discoveries: discoveries,
       deletions: deletions,
       watch_events: watch_events,
       interval: opts[:watch_interval]
 
-    Franz::Tail.new \
+    @t = Franz::Tail.new \
       watch_events: watch_events,
       tail_events: tail_events
 
-    Franz::Multiline.new \
+    @m = Franz::Multiline.new \
       configs: opts[:configs],
       tail_events: tail_events,
       multiline_events: opts[:queue]
+  end
+
+  def stop
+    @d.stop
+    @w.stop
+    @t.stop
+    @m.stop
   end
 end

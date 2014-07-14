@@ -4,16 +4,20 @@ require_relative 'helpers'
 class Franz::Watch
   include Franz::Helpers
 
-  def initialize opts={}
+  attr_reader :stats
+
+  def initialize opts={}, stats=Hash.new
     @discoveries  = opts[:discoveries]  || []
     @deletions    = opts[:deletions]    || []
     @watch_events = opts[:watch_events] || []
     @interval     = opts[:interval]     || 1
 
-    @stats = {}
+    @stats = stats
 
-    Thread.new do
-      loop do
+    @stop = false
+
+    @t = Thread.new do
+      until @stop
         until discoveries.empty?
           stats[discoveries.pop] = nil
         end
@@ -25,6 +29,8 @@ class Franz::Watch
       end
     end
   end
+
+  def stop ; @stop = true ; @t.join end
 
 private
   attr_reader :discoveries, :deletions, :watch_events, :interval, :stats

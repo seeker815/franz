@@ -4,28 +4,34 @@ require 'buftok'
 
 
 class Franz::Tail
-  def initialize opts={}
+  attr_reader :cursor
+
+  def initialize opts={}, cursor=Hash.new
     @watch_events      = opts[:watch_events]      || []
     @tail_events       = opts[:tail_events]       || []
     @eviction_interval = opts[:eviction_interval] || 5
 
     @file    = Hash.new
     @buffer  = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
-    @cursor  = Hash.new
+    @cursor  = cursor
     @changed = Hash.new
     @reading = Hash.new
 
     @block_size = 5120 # 5 KiB
 
-    Thread.new do
-      loop do
+    @stop = false
+
+    @t1 = Thread.new do
+      until @stop
         evict
         sleep eviction_interval
       end
+      sleep eviction_interval
+      evict
     end
 
-    Thread.new do
-      loop do
+    @t2 = Thread.new do
+      until @stop
         e = watch_events.shift
         case e[:name]
         when :created
@@ -46,6 +52,8 @@ class Franz::Tail
     end
   end
 
+  def stop ; @stop = true ; @t1.join ; @t2.join end
+
 private
   attr_reader :watch_events, :tail_events, :eviction_interval, :file, :buffer
 
@@ -54,27 +62,41 @@ private
   end
 
   def open path
+    return true unless file[path].nil?
     pos = @cursor.include?(path) ? @cursor[path] : 0
-    file[path] = File.open(path)
-    file[path].sysseek pos, IO::SEEK_SET
-    @cursor[path] = pos
-    @changed[path] = Time.now.to_i
+    begin
+      file[path] = File.open(path)
+      file[path].sysseek pos, IO::SEEK_SET
+      @cursor[path] = pos
+      @changed[path] = Time.now.to_i
+    rescue Errno::ENOENT
+      return false
+    end
+    return true
   end
 
   def read path, size, type
-    open path if file[path].nil?
     @reading[path] = true
-    until file[path].pos >= size
+
+    loop do
+      begin
+        break if file[path].pos >= size
+      rescue NoMethodError
+        break unless open(path)
+        break if file[path].pos >= size
+      end
+
       begin
         data = file[path].sysread @block_size
         buffer[path].extract(data).each do |line|
           tail_events.push type: type, path: realpath(path), line: line
         end
-      rescue EOFError
+      rescue EOFError, Errno::ENOENT
         # we're done here
       end
+      @cursor[path] = file[path].pos
     end
-    @cursor[path] = file[path].pos
+
     @changed[path] = Time.now.to_i
     @reading.delete path
   end

@@ -4,30 +4,38 @@ require_relative 'sash'
 
 
 class Franz::Multiline
-  def initialize opts={}
+  attr_reader :seq
+
+  def initialize opts={}, seq=Hash.new { |h, k| h[k] = 0 }
     @configs          = opts[:configs]          || []
     @tail_events      = opts[:tail_events]      || []
     @multiline_events = opts[:multiline_events] || []
     @flush_interval   = opts[:flush_interval]   || 5
     @lock             = Mutex.new
     @buffer           = Sash.new
-    @seq              = Hash.new { |h, k| h[k] = 0 }
+    @seq              = seq
 
     @type = Hash.new
 
-    Thread.new do
-      loop do
+    @stop = false
+
+    @t1 = Thread.new do
+      until @stop
         flush
         sleep flush_interval
       end
+      sleep flush_interval
+      flush
     end
 
-    Thread.new do
-      loop do
+    @t2 = Thread.new do
+      until @stop
         capture
       end
     end
   end
+
+  def stop ; @stop = true ; @t1.join ; @t2.join end
 
 private
   attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :lock, :buffer, :seq
