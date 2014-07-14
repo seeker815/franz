@@ -6,23 +6,33 @@ require 'franz'
 
 Thread.abort_on_exception = true
 
-configs = [{
-  type: :a,
-  includes: %w[ test.a.log ],
-}, {
-  type: :b,
-  includes: %w[ test.b.log ],
-}, {
-  type: :c,
-  includes: %w[ test.c.log ],
-}, {
-  type: :d,
-  includes: %w[ test.d.log ],
+configs_one = [{
+  type: :one,
+  includes: [
+    '/Users/sclemmer/Desktop/birch/tmp/test.1*',
+    '/Users/sclemmer/Desktop/birch/tmp/test.2*',
+    '/Users/sclemmer/Desktop/birch/tmp/test.3*'
+  ]
+}]
+
+configs_two = [{
+  type: :two,
+  includes: [
+    '/Users/sclemmer/Desktop/birch/tmp/test.4*',
+    '/Users/sclemmer/Desktop/birch/tmp/test.5*',
+    '/Users/sclemmer/Desktop/birch/tmp/test.6*',
+    '/Users/sclemmer/Desktop/birch/tmp/test.7*',
+    '/Users/sclemmer/Desktop/birch/tmp/test.8*',
+    '/Users/sclemmer/Desktop/birch/tmp/test.9*'
+  ],
 }]
 
 input = Queue.new
 
-Franz::Input.new queue: input, configs: configs, \
+Franz::Input.new queue: input, configs: configs_one, \
+  disover_interval: 5, watch_interval: 2, eviction_interval: 10, flush_interval: 5
+
+Franz::Input.new queue: input, configs: configs_two, \
   disover_interval: 5, watch_interval: 2, eviction_interval: 10, flush_interval: 5
 
 START = Time.now

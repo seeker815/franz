@@ -10,14 +10,12 @@ class Franz::Watch
     @watch_events = opts[:watch_events] || []
     @interval     = opts[:interval]     || 1
 
-    @stats, @types = {}, {}
+    @stats = {}
 
     Thread.new do
       loop do
         until discoveries.empty?
-          d = discoveries.pop
-          types[d[:path]] = d[:type]
-          stats[d[:path]] = nil
+          stats[discoveries.pop] = nil
         end
         watch.each do |deleted|
           stats.delete deleted
@@ -29,10 +27,10 @@ class Franz::Watch
   end
 
 private
-  attr_reader :discoveries, :deletions, :watch_events, :interval, :stats, :types
+  attr_reader :discoveries, :deletions, :watch_events, :interval, :stats
 
-  def enqueue name, type, path, size=0
-    watch_events.push name: name, type: type, path: path, size: size
+  def enqueue name, path, size=nil
+    watch_events.push name: name, path: path, size: size
   end
 
   def watch
@@ -42,18 +40,18 @@ private
       stats[path] = stat
 
       if file_created? old_stat, stat
-        enqueue :created, types[path], path
+        enqueue :created, path
       elsif file_deleted? old_stat, stat
-        enqueue :deleted, types[path], path
+        enqueue :deleted, path
         deleted.push path # deal with this below
       end
 
       if file_replaced? old_stat, stat
-        enqueue :replaced, types[path], path, stat[:size]
+        enqueue :replaced, path, stat[:size]
       elsif file_appended? old_stat, stat
-        enqueue :appended, types[path], path, stat[:size]
+        enqueue :appended, path, stat[:size]
       elsif file_truncated? old_stat, stat
-        enqueue :truncated, types[path], path, stat[:size]
+        enqueue :truncated, path, stat[:size]
       end
     end
     return deleted

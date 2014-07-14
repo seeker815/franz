@@ -13,6 +13,8 @@ class Franz::Multiline
     @buffer           = Sash.new
     @seq              = Hash.new { |h, k| h[k] = 0 }
 
+    @type = Hash.new
+
     Thread.new do
       loop do
         flush
@@ -30,28 +32,42 @@ class Franz::Multiline
 private
   attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :lock, :buffer, :seq
 
-  def config_with_type type
-    configs.select { |c| c[:type] == type }.shift
+  def type path
+    begin
+      @type.fetch path
+    rescue KeyError
+      configs.each do |config|
+        type = config[:type] if config[:includes].any? { |glob|
+          File.fnmatch?(glob, path) && !config[:excludes].any? { |xglob|
+            File.fnmatch?(xglob, path)
+          }
+        }
+        return @type[path] = type unless type.nil?
+      end
+      raise 'Could not identify type for path=%s' % path
+    end
   end
 
-  def enqueue type, path, message
-    multiline_events.push type: type, path: path, message: message, seq: seq[path] += 1
+  def config path
+    configs.select { |c| c[:type] == type(path) }.shift
+  end
+
+  def enqueue path, message
+    multiline_events.push type: type(path), path: path, message: message, seq: seq[path] += 1
   end
 
   def capture 
     event     = tail_events.shift
-    config    = config_with_type event[:type]
-    multiline = config[:multiline]
-
+    multiline = config(event[:path])[:multiline]
     if multiline.nil?
-      enqueue event[:type], event[:path], event[:line]
+      enqueue event[:path], event[:line]
     else
       lock.synchronize do
         if event[:line] =~ multiline
           buffered = buffer.flush(event[:path])
           lines = buffered.map { |e| e[:line] }
           unless lines.empty?
-            enqueue event[:type], event[:path], lines.join("\n")
+            enqueue event[:path], lines.join("\n")
           end
         end
         buffer.insert event[:path], event
@@ -67,7 +83,7 @@ private
           buffered = buffer.remove(path)
           lines = buffered.map { |e| e[:line] }
           unless lines.empty?
-            enqueue buffered[0][:type], path, lines.join("\n")
+            enqueue path, lines.join("\n")
           end
         end
       end
