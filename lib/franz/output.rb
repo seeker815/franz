@@ -1,40 +1,57 @@
 require 'json'
-require 'thread'
 require 'socket'
 
 require 'bunny'
+require 'deep_merge'
 
 
 class Franz::Output
   @@host = Socket.gethostname
 
   def initialize opts={}
-    input = opts[:input] || Queue.new
-    rabbit = Bunny.new
+    opts = {
+      input: nil,
+      output: {
+        rabbitmq: {
+          exchange: {
+            name: 'test',
+            durable: true,
+            type: 'x-consistent-hash'
+          },
+          connection: {
+            host: 'localhost',
+            port: 5672
+          }
+        }
+      }
+    }.deep_merge!(opts)
+
+    rabbit = Bunny.new opts[:output][:rabbitmq][:connection]
     rabbit.start
-    channel   = rabbit.create_channel
-    exchange = channel.exchange 'test', \
-      :durable => true, :type => 'x-consistent-hash'
+
+    channel  = rabbit.create_channel
+    exchange = opts[:output][:rabbitmq][:exchange].delete(:name)
+    exchange = channel.exchange exchange, opts[:output][:rabbitmq][:exchange]
 
     @stop = false
     @foreground = opts[:foreground]
 
-    @t = Thread.new do
+    @thread = Thread.new do
       rand = Random.new
       until @stop
         exchange.publish \
-          JSON::generate(input.shift.merge(host: @@host)),
+          JSON::generate(opts[:input].shift.merge(host: @@host)),
           persistent: false, routing_key: rand.rand(1_000_000)
       end
     end
 
-    @t.join if @foreground
+    @thread.join if @foreground
   end
 
   def join
     return if @foreground
     @foreground = true
-    @t.join
+    @thread.join
   end
 
   def stop

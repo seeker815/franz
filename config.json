@@ -1,0 +1,31 @@
+{
+  "state": "franz.state",
+
+  "input": {
+    "discover_interval": 5,
+    "watch_interval": 2,
+    "eviction_interval": 10,
+    "flush_interval": 5,
+    "configs": [
+      {
+        "type": "test",
+        "multiline": "(?-mix:^\\d)",
+        "includes": [
+          "/Users/sclemmer/Desktop/franz/tmp/*"
+        ]
+      }
+    ]
+  },
+
+  "output": {
+    "rabbitmq": {
+      "exchange": {
+        "name": "test"
+      },
+      "connection": {
+        "host": "localhost",
+        "port": 7712
+      }
+    }
+  }
+}

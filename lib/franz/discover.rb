@@ -1,9 +1,4 @@
 class Franz::Discover
-  attr_reader :known
-
-  # Create a new Discover object
-  #
-  # @param opts [Hash, nil] an options hash or nil for defaults
   def initialize opts={}
     @configs     = opts[:configs]     || []
     @discoveries = opts[:discoveries] || []
@@ -19,12 +14,9 @@ class Franz::Discover
 
     @stop = false
 
-    @t = Thread.new do
+    @thread = Thread.new do
       until @stop
-        until deletions.empty?
-          d = deletions.pop
-          @known.delete d
-        end
+        @known.delete deletions.pop until deletions.empty?
         discover.each do |discovery|
           discoveries.push discovery
           @known.push discovery
@@ -36,7 +28,7 @@ class Franz::Discover
 
   def stop
     @stop = true
-    @t.join
+    @thread.join
     return @known
   end
 

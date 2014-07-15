@@ -10,17 +10,16 @@ class Franz::Tail
     @watch_events      = opts[:watch_events]      || []
     @tail_events       = opts[:tail_events]       || []
     @eviction_interval = opts[:eviction_interval] || 5
+    @block_size        = opts[:block_size]        || 5120 # 5 KiB
     @cursors           = opts[:cursors]           || Hash.new
 
     @buffer  = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
     @file    = Hash.new
     @changed = Hash.new
     @reading = Hash.new
+    @stop    = false
 
-    @block_size = 5120 # 5 KiB
-    @stop = false
-
-    @t1 = Thread.new do
+    @evict_thread = Thread.new do
       until @stop
         evict
         sleep eviction_interval
@@ -29,7 +28,7 @@ class Franz::Tail
       evict
     end
 
-    @t2 = Thread.new do
+    @watch_thread = Thread.new do
       until @stop
         e = watch_events.shift
         case e[:name]
@@ -53,13 +52,13 @@ class Franz::Tail
 
   def stop
     @stop = true
-    @t2.kill
-    @t1.join
+    @watch_thread.kill
+    @evict_thread.join
     return @cursors
   end
 
 private
-  attr_reader :watch_events, :tail_events, :eviction_interval, :file, :buffer
+  attr_reader :watch_events, :tail_events, :eviction_interval, :block_size, :cursors, :file, :buffer, :changed, :reading
 
   def realpath path
     Pathname.new(path).realpath.to_s

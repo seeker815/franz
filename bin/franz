@@ -7,36 +7,41 @@ require 'franz'
 
 Thread.abort_on_exception = true
 
-configs = [{
-  type: :one,
-  includes: %w[ /Users/sclemmer/Desktop/fun/tmp/* ],
-  multiline: /^\d/
-}]
+config = nil
+%w[
+  config.json
+  %{HOME}/.franz.json
+  /etc/franz/franz.json
+].each do |path|
+  config = Franz::Config.load path % ENV rescue nil
+  break unless config.nil?
+end
 
-input = Franz::BoundedQueue.new 4096
-
-state = File.read('franz.state') rescue nil
-state = Marshal.load(state) unless state.nil?
+state = File.read(config[:state]) rescue nil
+unless state.nil?
+  $stderr.print 'Loading... '
+  state = Marshal.load state
+  $stderr.puts 'Done!'
+end
 
 begin
+  io = Franz::Queue.new
+
   fout = Franz::Output.new \
-    input: input
+    input: io,
+    output: config[:output]
 
   fin = Franz::Input.new \
-    output: input,
-    configs: configs,
-    disover_interval: 5,
-    watch_interval: 2,
-    eviction_interval: 10,
-    flush_interval: 5,
+    input: config[:input],
+    output: io,
     state: state
 
   fout.join
 
 rescue Interrupt
   $stderr.puts
-  $stderr.print 'Draining... '
-  File.open('franz.state', 'w') do |f|
+  $stderr.print 'Saving... '
+  File.open(config[:state], 'w') do |f|
     f.write Marshal.dump(fin.stop)
   end
   $stderr.puts 'Done!'

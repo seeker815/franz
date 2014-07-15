@@ -4,8 +4,6 @@ require_relative 'helpers'
 class Franz::Watch
   include Franz::Helpers
 
-  attr_reader :stats
-
   def initialize opts={}
     @discoveries  = opts[:discoveries]  || []
     @deletions    = opts[:deletions]    || []
@@ -13,14 +11,14 @@ class Franz::Watch
     @interval     = opts[:interval]     || 1
     @stats        = opts[:stats]        || Hash.new
 
-    @stop = false
-
     # Need to resend old events to make sure Tail catches up
     stats.each do |path, old_stat|
       watch_events.push name: :appended, path: path, size: old_stat[:size]
     end
 
-    @t = Thread.new do
+    @stop = false
+
+    @thread = Thread.new do
       until @stop
         until discoveries.empty?
           @stats[discoveries.pop] = nil
@@ -36,7 +34,7 @@ class Franz::Watch
 
   def stop
     @stop = true
-    @t.join
+    @thread.join
     return @stats
   end
 
@@ -48,7 +46,6 @@ private
   end
 
   def watch
-    
     deleted = []
     stats.each do |path, old_stat|
       stat = stat_for path

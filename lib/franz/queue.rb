@@ -16,8 +16,8 @@ module Franz
     end
   end
 
-  class BoundedQueue
-    def initialize(max_size = :infinite, options={})
+  class Queue
+    def initialize(max_size=4096, options={}) # also max_size=:infinite
       @items           = []
       @max_size        = max_size
       @lock            = options.fetch(:lock) { Mutex.new }

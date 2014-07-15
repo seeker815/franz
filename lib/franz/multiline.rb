@@ -13,11 +13,10 @@ class Franz::Multiline
     @flush_interval   = opts[:flush_interval]   || 5
     @seqs             = opts[:seqs]              || Hash.new
 
-    @type   = Hash.new
+    @types  = Hash.new
     @lock   = Mutex.new
     @buffer = Sash.new
-
-    @stop = false
+    @stop   = false
 
     @t1 = Thread.new do
       until @stop
@@ -43,11 +42,11 @@ class Franz::Multiline
   end
 
 private
-  attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :lock, :buffer, :seqs
+  attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :seqs, :types, :lock, :buffer
 
   def type path
     begin
-      @type.fetch path
+      @types.fetch path
     rescue KeyError
       configs.each do |config|
         type = config[:type] if config[:includes].any? { |glob|
@@ -55,7 +54,7 @@ private
             File.fnmatch?(xglob, path)
           }
         }
-        return @type[path] = type unless type.nil?
+        return @types[path] = type unless type.nil?
       end
       raise 'Could not identify type for path=%s' % path
     end
@@ -65,13 +64,16 @@ private
     configs.select { |c| c[:type] == type(path) }.shift
   end
 
-  def enqueue path, message
+  def seq path
     begin
-      seq = seqs.fetch(path)
+      seqs[path] = seqs.fetch(path) + 1
     rescue KeyError
-      seq, seqs[path] = 1, 1
+      seqs[path] = 1
     end
-    multiline_events.push type: type(path), path: path, message: message, seq: seq
+  end
+
+  def enqueue path, message
+    multiline_events.push path: path, message: message, type: type(path), seq: seq(path)
   end
 
   def capture 

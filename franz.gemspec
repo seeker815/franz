@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'buftok'
   s.add_runtime_dependency 'trollop'
   s.add_runtime_dependency 'colorize'
+  s.add_runtime_dependency 'deep_merge'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- test/*`.split("\n")
