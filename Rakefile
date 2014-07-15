@@ -3,7 +3,6 @@ require 'bundler'
 require 'rake'
 
 require 'rake/testtask'
-require 'minitest/autorun'
 Rake::TestTask.new(:test) do |test|
   test.libs << 'lib' << 'test'
   test.test_files = FileList['test/test*.rb']
@@ -13,7 +12,9 @@ end
 task :default => :test
 
 require 'yard'
-YARD::Rake::YardocTask.new
+YARD::Rake::YardocTask.new do |t|
+  t.files = %w[ --readme Readme.md lib/**/*.rb - VERSION ]
+end
 
 require 'rubygems/tasks'
 Gem::Tasks.new({
