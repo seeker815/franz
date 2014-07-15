@@ -16,15 +16,23 @@ class Franz::Output
     exchange = channel.exchange 'test', \
       :durable => true, :type => 'x-consistent-hash'
 
-    t = Thread.new do
+    @stop = false
+    @foreground = opts[:foreground]
+
+    @t = Thread.new do
       rand = Random.new
-      loop do
+      until @stop
         exchange.publish \
           JSON::generate(input.shift.merge(host: @@host)),
           persistent: false, routing_key: rand.rand(1_000_000)
       end
     end
 
-    t.join if opts[:foreground]
+    @t.join if @foreground
+  end
+
+  def stop
+    return if @foreground
+    @t.join
   end
 end

@@ -4,11 +4,12 @@ class Franz::Discover
   # Create a new Discover object
   #
   # @param opts [Hash, nil] an options hash or nil for defaults
-  def initialize opts={}, known=[]
+  def initialize opts={}, known=nil
     @configs     = opts[:configs]     || []
     @discoveries = opts[:discoveries] || []
     @deletions   = opts[:deletions]   || []
     @interval    = opts[:interval]    || 1
+    @known       = known              || []
 
     @configs = configs.map do |config|
       config[:includes] ||= []
@@ -16,23 +17,28 @@ class Franz::Discover
       config
     end
 
-    @known = known
-
     @stop = false
 
     @t = Thread.new do
       until @stop
-        known.delete deletions.pop until deletions.empty?
+        until deletions.empty?
+          d = deletions.pop
+          @known.delete d
+        end
         discover.each do |discovery|
           discoveries.push discovery
-          known.push discovery
+          @known.push discovery
         end
         sleep interval
       end
     end
   end
 
-  def stop ; @stop = true ; @t.join end
+  def stop
+    @stop = true
+    @t.join
+    return @known
+  end
 
 private
   attr_reader :configs, :discoveries, :deletions, :interval, :known

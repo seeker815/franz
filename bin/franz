@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
+require 'json'
 require 'thread'
+
 require 'bunny'
 require 'franz'
 
@@ -13,19 +15,28 @@ configs = [{
 
 input = Franz::BoundedQueue.new 4096
 
-Franz::Input.new queue: input, configs: configs, \
-  disover_interval: 5, watch_interval: 2, eviction_interval: 10, flush_interval: 5
+state = File.read('franz.state') rescue nil
+state = Marshal.load(state) unless state.nil?
 
-START = Time.now
-LIMIT = ARGV.first.to_i
-# i = 0
-# until i == LIMIT
-#   p input.shift
-#   i += 1
-# end
-Franz::Output.new input: input, limit: LIMIT, foreground: true
-ELAPSED = Time.now - START
+fin = Franz::Input.new({
+  queue: input,
+  configs: configs,
+  disover_interval: 5,
+  watch_interval: 2,
+  eviction_interval: 10,
+  flush_interval: 5
+}, state)
 
-$stderr.puts 'num events: %d [E]' % LIMIT
-$stderr.puts 'time elapsed: %.2f [s]' % ELAPSED
-$stderr.puts 'throughput: %.1f [E/s]' % [ LIMIT / ELAPSED ]
+begin
+  Franz::Output.new \
+    input: input,
+    foreground: true
+
+rescue Interrupt
+  $stderr.puts
+  $stderr.print 'Draining... '
+  File.open('franz.state', 'w') do |f|
+    f.write Marshal.dump(fin.stop)
+  end
+  $stderr.puts 'Done!'
+end

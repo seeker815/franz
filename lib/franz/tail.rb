@@ -6,19 +6,18 @@ require 'buftok'
 class Franz::Tail
   attr_reader :cursor
 
-  def initialize opts={}, cursor=Hash.new
+  def initialize opts={}, cursor=nil
     @watch_events      = opts[:watch_events]      || []
     @tail_events       = opts[:tail_events]       || []
     @eviction_interval = opts[:eviction_interval] || 5
+    @cursor            = cursor                   || Hash.new
 
-    @file    = Hash.new
     @buffer  = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
-    @cursor  = cursor
+    @file    = Hash.new
     @changed = Hash.new
     @reading = Hash.new
 
     @block_size = 5120 # 5 KiB
-
     @stop = false
 
     @t1 = Thread.new do
@@ -52,7 +51,12 @@ class Franz::Tail
     end
   end
 
-  def stop ; @stop = true ; @t1.join ; @t2.join end
+  def stop
+    @stop = true
+    @t2.kill
+    @t1.join
+    return @cursor
+  end
 
 private
   attr_reader :watch_events, :tail_events, :eviction_interval, :file, :buffer

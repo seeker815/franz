@@ -3,6 +3,7 @@
 *.out
 *.pid
 *.swp
+*.state
 .DS_Store
 .yardoc
 doc

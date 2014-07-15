@@ -6,23 +6,27 @@ class Franz::Watch
 
   attr_reader :stats
 
-  def initialize opts={}, stats=Hash.new
+  def initialize opts={}, stats=nil
     @discoveries  = opts[:discoveries]  || []
     @deletions    = opts[:deletions]    || []
     @watch_events = opts[:watch_events] || []
     @interval     = opts[:interval]     || 1
-
-    @stats = stats
+    @stats        = stats               || Hash.new
 
     @stop = false
+
+    # Need to resend old events to make sure Tail catches up
+    stats.each do |path, old_stat|
+      watch_events.push name: :appended, path: path, size: old_stat[:size]
+    end
 
     @t = Thread.new do
       until @stop
         until discoveries.empty?
-          stats[discoveries.pop] = nil
+          @stats[discoveries.pop] = nil
         end
         watch.each do |deleted|
-          stats.delete deleted
+          @stats.delete deleted
           deletions.push deleted
         end
         sleep interval
@@ -30,7 +34,11 @@ class Franz::Watch
     end
   end
 
-  def stop ; @stop = true ; @t.join end
+  def stop
+    @stop = true
+    @t.join
+    return @stats
+  end
 
 private
   attr_reader :discoveries, :deletions, :watch_events, :interval, :stats
@@ -40,6 +48,7 @@ private
   end
 
   def watch
+    
     deleted = []
     stats.each do |path, old_stat|
       stat = stat_for path
