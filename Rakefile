@@ -3,9 +3,10 @@ require 'bundler'
 require 'rake'
 
 require 'rake/testtask'
+require 'minitest/autorun'
 Rake::TestTask.new(:test) do |test|
   test.libs << 'lib' << 'test'
-  test.pattern = 'test/**/test_*.rb'
+  test.test_files = FileList['test/test*.rb']
   test.verbose = true
 end
 
@@ -13,7 +14,6 @@ task :default => :test
 
 require 'yard'
 YARD::Rake::YardocTask.new
-
 
 require 'rubygems/tasks'
 Gem::Tasks.new({
