@@ -5,33 +5,33 @@ require 'bunny'
 require 'deep_merge'
 
 
-class Franz::Output
+module Franz::Output ; end
+
+class Franz::Output::Rabbitmq
   @@host = Socket.gethostname
 
   def initialize opts={}
     opts = {
       input: nil,
       output: {
-        rabbitmq: {
-          exchange: {
-            name: 'test',
-            durable: true,
-            type: 'x-consistent-hash'
-          },
-          connection: {
-            host: 'localhost',
-            port: 5672
-          }
+        exchange: {
+          name: 'test',
+          durable: true,
+          type: 'x-consistent-hash'
+        },
+        connection: {
+          host: 'localhost',
+          port: 5672
         }
       }
     }.deep_merge!(opts)
 
-    rabbit = Bunny.new opts[:output][:rabbitmq][:connection]
+    rabbit = Bunny.new opts[:output][:connection]
     rabbit.start
 
     channel  = rabbit.create_channel
-    exchange = opts[:output][:rabbitmq][:exchange].delete(:name)
-    exchange = channel.exchange exchange, opts[:output][:rabbitmq][:exchange]
+    exchange = opts[:output][:exchange].delete(:name)
+    exchange = channel.exchange exchange, opts[:output][:exchange]
 
     @stop = false
     @foreground = opts[:foreground]

@@ -46,9 +46,9 @@ end
 begin
   io = Franz::Queue.new
 
-  fout = Franz::Output.new \
+  fout = Franz::Output::Rabbitmq.new \
     input: io,
-    output: config[:output],
+    output: config[:output][:rabbitmq],
     logger: logger
 
   fin = Franz::Input.new \

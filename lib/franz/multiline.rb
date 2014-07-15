@@ -69,11 +69,7 @@ private
   end
 
   def seq path
-    begin
-      seqs[path] = seqs.fetch(path) + 1
-    rescue KeyError
-      seqs[path] = 1
-    end
+    seqs[path] = seqs.fetch(path) { 1 }
   end
 
   def enqueue path, message
