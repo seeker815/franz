@@ -23,46 +23,91 @@ class TestFranzWatch < MiniTest::Test
     FileUtils.rm_rf @tmpdir
   end
 
-  def test_watches_existing_file
+  def test_handles_existing_file
     tmp = tempfile %w[ test .log ]
-    watch_with_opts stats: {}
+    start_watch
     sleep 2
-    stats = stop
+    stats = stop_watch
     assert stats.include?(tmp.path)
     assert stats[tmp.path][:size] == 0
   end
 
-  def test_watches_existing_file_with_content
+  def test_handles_existing_file_with_content
     content = "Hello, world!\n"
     tmp = tempfile %w[ test .log ]
     tmp.write content
     tmp.flush
-    watch_with_opts stats: {}
+    start_watch
     sleep 2
-    stats = stop
+    stats = stop_watch
     assert stats.include?(tmp.path)
     assert stats[tmp.path][:size] == content.length
   end
 
-  def test_watches_new_file
-    watch_with_opts stats: {}
+  def test_handles_new_file
+    start_watch
     tmp = tempfile %w[ test .log ]
     sleep 3
-    stats = stop
+    stats = stop_watch
     assert stats.include?(tmp.path)
     assert stats[tmp.path][:size] == 0
   end
 
-  def test_watches_new_file_with_content
-    watch_with_opts stats: {}
+  def test_handles_new_file_with_content
+    start_watch
     content = "Hello, world!\n"
     tmp = tempfile %w[ test .log ]
     tmp.write content
     tmp.flush
     sleep 3
-    stats = stop
+    stats = stop_watch
     assert stats.include?(tmp.path)
     assert stats[tmp.path][:size] == content.length
+  end
+
+  def test_handles_file_truncated
+    long_content = "Hello, world!\n"
+    short_content = "Bye!\n"
+
+    tmp = tempfile %w[ test .log ]
+    tmp.write long_content
+    tmp.flush
+
+    start_watch
+    sleep 2
+    tmp.rewind
+    tmp.truncate 0
+    tmp.write short_content
+    tmp.flush
+    sleep 3
+
+    stats = stop_watch
+    assert stats.include?(tmp.path)
+    assert stats[tmp.path][:size] == short_content.length
+  end
+
+  def test_handles_file_replaced
+    content1 = "Hello, world!\n"
+    content2 = "Bye!\n"
+
+    tmp1 = tempfile %w[ test .log ]
+    tmp1.write content1
+    tmp1.flush
+    tmp1.close
+
+    tmp2 = tempfile %w[ exclude .log ]
+    tmp2.write content2
+    tmp2.flush
+    tmp2.close
+
+    start_watch
+    sleep 2
+    FileUtils.ln_sf tmp2.path, tmp1.path
+    sleep 3
+
+    stats = stop_watch
+    assert stats.include?(tmp1.path)
+    assert stats[tmp1.path][:size] == content2.length
   end
 
 private
@@ -70,7 +115,7 @@ private
     Tempfile.new(prefix, @tmpdir)
   end
 
-  def watch_with_opts opts={}
+  def start_watch opts={}
     @discover = Franz::Discover.new({
       interval: 1,
       discoveries: @discoveries,
@@ -92,7 +137,7 @@ private
     }.deep_merge!(opts))
   end
 
-  def stop
+  def stop_watch
     @watch.stop
   end
 end
