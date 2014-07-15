@@ -7,6 +7,7 @@ require 'colorize'
 # A powerful, colorful logger for Franz.
 class Franz::Logger < Logger
 
+  # Maps each log level to a unique combination of fore- and background colors
   SEVERITY_COLORS = {
     'DEBUG' => [ :blue,   :default ],
     'INFO'  => [ :green,  :default ],

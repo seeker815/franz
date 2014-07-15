@@ -4,9 +4,14 @@ require 'pathname'
 require 'buftok'
 
 
+# Tail receives low-level file events from a Watch and handles the actual
+# reading of files, providing a stream of lines.
 class Franz::Tail
   attr_reader :cursors
 
+  # Start a new Tail thread in the background.
+  #
+  # @param opts [Hash] a complex Hash for tail configuration
   def initialize opts={}
     @watch_events      = opts[:watch_events]      || []
     @tail_events       = opts[:tail_events]       || []
@@ -52,7 +57,11 @@ class Franz::Tail
     end
   end
 
+  # Stop the Tail thread. Effectively only once.
+  #
+  # @return [Hash] internal "cursors" state
   def stop
+    return @cursors if @stop
     @stop = true
     @watch_thread.kill
     @evict_thread.join

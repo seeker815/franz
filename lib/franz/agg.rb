@@ -5,11 +5,18 @@ require 'socket'
 require_relative 'sash'
 
 
+# Agg mostly aggregates Tail events by applying the multiline filter, but it
+# also applies the "host" and "type" fields. Basically, it does all the post-
+# processing after we've retreived a line from a file.
 class Franz::Agg
   @@host = Socket.gethostname
 
   attr_reader :seqs
 
+
+  # Start a new Agg thread in the background.
+  #
+  # @param opts [Hash] a complex Hash for discovery configuration
   def initialize opts={}, seqs=nil
     @configs        = opts[:configs]        || []
     @tail_events    = opts[:tail_events]    || []
@@ -39,7 +46,11 @@ class Franz::Agg
     end
   end
 
+  # Stop the Agg thread. Effectively only once.
+  #
+  # @return [Hash] internal "seqs" state
   def stop
+    return @seqs if @stop
     @stop = true
     @t2.kill
     @t1.join

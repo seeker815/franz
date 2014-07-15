@@ -1,13 +1,15 @@
 require 'json'
 
 # All things configuration.
-module Franz::Config
+class Franz::Config
 
   # Load a config file path into a Hash, converting to some native types where
   # appropriate (e.g. a String denoting a Regexp will become Regexp).
   #
   # @param path [String] path to a config file
-  def self.load path
+  #
+  # @return [Hash] config compiled into a native Hash
+  def self.new path
     config = JSON::parse File.read(path), symbolize_names: true
     config[:input][:configs].map! do |input|
       input[:multiline] = Regexp.new input[:multiline]

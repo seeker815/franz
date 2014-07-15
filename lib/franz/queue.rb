@@ -29,71 +29,103 @@
 require 'thread'
 
 
-module Franz
-  class Condition
-    def initialize lock
-      @lock = lock
-      @cond = ConditionVariable.new
-    end
 
-    def wait timeout=nil
-      @cond.wait @lock, timeout
-    end
+# Bind a condition variable to a mutex.
+class Franz::Condition
 
-    def signal
-      @cond.signal
+  # Create a new Condition.
+  #
+  # @param lock [Mutex] mutex to use
+  def initialize lock
+    @lock = lock
+    @cond = ConditionVariable.new
+  end
+
+  # Wait on the condition variable.
+  #
+  # @param timeout [Integer] timeout in seconds on wait
+  def wait timeout=nil
+    @cond.wait @lock, timeout
+  end
+
+  # Signal the condition variaable.
+  def signal
+    @cond.signal
+  end
+end
+
+
+# Like Thread::Queue, but optionally bounded.
+class Franz::Queue
+
+  # Create a new bounded Queue.
+  #
+  # @param max_size [Integer] set a bound (or :infinite for no bound)
+  def initialize max_size=4096, options={}
+    @items           = []
+    @max_size        = max_size
+    @lock            = Mutex.new
+    @space_available = Franz::Condition.new @lock
+    @item_available  = Franz::Condition.new @lock
+  end
+
+  # Push an item onto the Queue, blocking if it's full.
+  #
+  # @param obj [Object] item to push
+  # @param timeout [Integer] timeout in seconds to wait (or :never for none)
+  # @param timeout_policy [Proc] will be called in event of a timeout
+  def push obj, timeout=:never, &timeout_policy
+    timeout_policy ||= -> { raise 'Push timed out' }
+    wait_for_condition(@space_available, -> { !full? }, timeout, timeout_policy) do
+      @items.push obj
+      @item_available.signal
+    end
+    return self
+  end
+
+  # Pop an item off the Queue, blocking if it's empty.
+  #
+  # @param timeout [Integer] timeout in seconds to wait (or :never for none)
+  # @param timeout_policy [Proc] will be called in event of a timeout
+  #
+  # @return [Object] the item we popped
+  def pop timeout=:never, &timeout_policy
+    timeout_policy ||= -> { nil }
+    wait_for_condition(@item_available, -> { @items.any? }, timeout, timeout_policy) do
+      item = @items.shift
+      @space_available.signal unless full?
+      item
     end
   end
 
-  class Queue
-    def initialize max_size=4096, options={}
-      @items           = []
-      @max_size        = max_size
-      @lock            = options.fetch(:lock)            { Mutex.new }
-      @space_available = options.fetch(:space_available) { Condition.new(@lock) }
-      @item_available  = options.fetch(:item_available)  { Condition.new(@lock) }
-    end
+  alias_method :shift, :pop
 
-    def push obj, timeout=:never, &timeout_policy
-      timeout_policy ||= -> { raise 'Push timed out' }
-      wait_for_condition(@space_available, -> { !full? }, timeout, timeout_policy) do
-        @items.push obj
-        @item_available.signal
-      end
-    end
+  # Is the queue empty?
+  #
+  # @return [Boolean]
+  def empty? ; @items.empty? end
 
-    def pop timeout=:never, &timeout_policy
-      timeout_policy ||= -> { nil }
-      wait_for_condition(@item_available, -> { @items.any? }, timeout, timeout_policy) do
-        item = @items.shift
-        @space_available.signal unless full?
-        item
-      end
-    end
+  # Is the queue full?
+  #
+  # @return [Boolean]
+  def full?
+    return false if @max_size == :infinite
+    @max_size <= @items.size
+  end
 
-    alias_method :shift, :pop
-
-    def empty? ; @items.empty? end
-
-  private
-    def full?
-      return false if @max_size == :infinite
-      @max_size <= @items.size
-    end
-
-    def wait_for_condition cond, predicate, timeout=:never, timeout_policy=-> { nil }
-      deadline = timeout == :never ? :never : Time.now + timeout
-      @lock.synchronize do
-        loop do
-          cond_timeout = timeout == :never ? nil : deadline - Time.now
-          cond.wait(cond_timeout) if !predicate.call && cond_timeout.to_f >= 0
-          if predicate.call
-            return yield
-          elsif deadline == :never || deadline > Time.now
-            next
-          else
-            return timeout_policy.call
-          end
+private
+  def wait_for_condition cond, predicate, timeout=:never, timeout_policy=-> { nil }
+    deadline = timeout == :never ? :never : Time.now + timeout
+    @lock.synchronize do
+      loop do
+        cond_timeout = timeout == :never ? nil : deadline - Time.now
+        cond.wait(cond_timeout) if !predicate.call && cond_timeout.to_f >= 0
+        if predicate.call
+          return yield
+        elsif deadline == :never || deadline > Time.now
+          next
+        else
+          return timeout_policy.call
         end
       end
     end

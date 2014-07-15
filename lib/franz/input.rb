@@ -85,6 +85,8 @@ class Franz::Input
   # Stop everything. Has the effect of draining all the Queues and waiting on
   # auxilliarly threads (e.g. eviction) to complete full intervals, so it may
   # ordinarily take tens of seconds, depends on your configuration.
+  #
+  # @return [Hash] compact internal state
   def stop
     stats   = @watch.stop rescue {}
     cursors = @tail.stop  rescue {}

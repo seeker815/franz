@@ -8,7 +8,6 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.author      = Franz::AUTHOR
   s.email       = Franz::EMAIL
-  s.homepage    = Franz::HOMEPAGE
   s.summary     = Franz::SUMMARY
   s.description = Franz::SUMMARY + '.'
 

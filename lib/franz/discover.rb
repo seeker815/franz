@@ -6,7 +6,7 @@ require 'logger'
 # maintain this state, so it's fairly useless without a Watch.
 class Franz::Discover
 
-  # Start a new discovery thread in the background.
+  # Start a new Discover thread in the background.
   #
   # @param opts [Hash] a complex Hash for discovery configuration
   def initialize opts={}
@@ -42,8 +42,11 @@ class Franz::Discover
     end
   end
 
-  # Stop the discovery. Effectively only once.
+  # Stop the Discover thread. Effectively only once.
+  #
+  # @return [Array] internal "known" state
   def stop
+    return @known if @stop
     @stop = true
     @thread.join
     return @known
