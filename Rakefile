@@ -18,8 +18,9 @@ YARD::Rake::YardocTask.new
 require 'rubygems/tasks'
 Gem::Tasks.new({
   :push => false,
-  :build => { tar: true },
-  :sign => { checksum: true }
+  :sign => {}
 }) do |tasks|
   tasks.console.command = 'pry'
 end
+
+Gem::Tasks::Sign::Checksum.new sha2: true
