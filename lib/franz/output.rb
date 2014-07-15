@@ -31,8 +31,13 @@ class Franz::Output
     @t.join if @foreground
   end
 
-  def stop
+  def join
     return if @foreground
+    @foreground = true
     @t.join
+  end
+
+  def stop
+    join
   end
 end

@@ -4,12 +4,12 @@ class Franz::Discover
   # Create a new Discover object
   #
   # @param opts [Hash, nil] an options hash or nil for defaults
-  def initialize opts={}, known=nil
+  def initialize opts={}
     @configs     = opts[:configs]     || []
     @discoveries = opts[:discoveries] || []
     @deletions   = opts[:deletions]   || []
     @interval    = opts[:interval]    || 1
-    @known       = known              || []
+    @known       = opts[:known]       || []
 
     @configs = configs.map do |config|
       config[:includes] ||= []

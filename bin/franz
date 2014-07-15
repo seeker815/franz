@@ -18,19 +18,20 @@ input = Franz::BoundedQueue.new 4096
 state = File.read('franz.state') rescue nil
 state = Marshal.load(state) unless state.nil?
 
-fin = Franz::Input.new({
-  queue: input,
-  configs: configs,
-  disover_interval: 5,
-  watch_interval: 2,
-  eviction_interval: 10,
-  flush_interval: 5
-}, state)
-
 begin
-  Franz::Output.new \
-    input: input,
-    foreground: true
+  fout = Franz::Output.new \
+    input: input
+
+  fin = Franz::Input.new \
+    output: input,
+    configs: configs,
+    disover_interval: 5,
+    watch_interval: 2,
+    eviction_interval: 10,
+    flush_interval: 5,
+    state: state
+
+  fout.join
 
 rescue Interrupt
   $stderr.puts

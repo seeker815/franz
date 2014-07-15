@@ -1,5 +1,3 @@
-require 'thread'
-
 require_relative 'discover'
 require_relative 'watch'
 require_relative 'tail'
@@ -8,54 +6,57 @@ require_relative 'bounded_queue'
 
 
 class Franz::Input
-  def initialize opts={}, state=nil
+  def initialize opts={}
     opts = {
-      queue: Queue.new,
+      output: nil,
       configs: [],
       discover_interval: nil,
-      watch_interval: nil
+      watch_interval: nil,
+      discover_bound: 4096,
+      watch_bound: 4096,
+      tail_bound: 4096,
+      state: {}
     }.merge(opts)
 
-    state ||= {}
-    known   = state.keys
+    known = opts[:state].keys
     stats, cursors, seqs = {}, {}, {}
     known.each do |path|
-      cursor        = state[path].delete :cursor
-      seq           = state[path].delete :seq
+      cursor        = opts[:state][path].delete :cursor
+      seq           = opts[:state][path].delete :seq
       cursors[path] = cursor unless cursor.nil?
       seqs[path]    = seq    unless seq.nil?
-      stats[path]   = state[path]
+      stats[path]   = opts[:state][path]
     end
 
-    discoveries  = Franz::BoundedQueue.new 4096
-    deletions    = Franz::BoundedQueue.new 4096
-    watch_events = Franz::BoundedQueue.new 4096
-    tail_events  = Franz::BoundedQueue.new 4096
+    discoveries  = Franz::BoundedQueue.new opts[:discover_bound]
+    deletions    = Franz::BoundedQueue.new opts[:discover_bound]
+    watch_events = Franz::BoundedQueue.new opts[:watch_bound]
+    tail_events  = Franz::BoundedQueue.new opts[:tail_bound]
 
-    @d = Franz::Discover.new({
+    @d = Franz::Discover.new \
       discoveries: discoveries,
       deletions: deletions,
       configs: opts[:configs],
-      interval: opts[:discover_interval]
-    }, known)
+      interval: opts[:discover_interval],
+      known: known
 
-    @w = Franz::Watch.new({
+    @w = Franz::Watch.new \
       discoveries: discoveries,
       deletions: deletions,
       watch_events: watch_events,
-      interval: opts[:watch_interval]
-    }, stats)
+      interval: opts[:watch_interval],
+      stats: stats
 
-    @t = Franz::Tail.new({
+    @t = Franz::Tail.new \
       watch_events: watch_events,
-      tail_events: tail_events
-    }, cursors)
+      tail_events: tail_events,
+      cursors: cursors
 
-    @m = Franz::Multiline.new({
+    @m = Franz::Multiline.new \
       configs: opts[:configs],
       tail_events: tail_events,
-      multiline_events: opts[:queue]
-    }, seqs)
+      multiline_events: opts[:output],
+      seqs: seqs
   end
 
   def stop

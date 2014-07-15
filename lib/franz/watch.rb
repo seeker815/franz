@@ -6,12 +6,12 @@ class Franz::Watch
 
   attr_reader :stats
 
-  def initialize opts={}, stats=nil
+  def initialize opts={}
     @discoveries  = opts[:discoveries]  || []
     @deletions    = opts[:deletions]    || []
     @watch_events = opts[:watch_events] || []
     @interval     = opts[:interval]     || 1
-    @stats        = stats               || Hash.new
+    @stats        = opts[:stats]        || Hash.new
 
     @stop = false
 

@@ -4,14 +4,14 @@ require_relative 'sash'
 
 
 class Franz::Multiline
-  attr_reader :seq
+  attr_reader :seqs
 
-  def initialize opts={}, seq=nil
+  def initialize opts={}, seqs=nil
     @configs          = opts[:configs]          || []
     @tail_events      = opts[:tail_events]      || []
     @multiline_events = opts[:multiline_events] || []
     @flush_interval   = opts[:flush_interval]   || 5
-    @seq              = seq                     || Hash.new { |h, k| h[k] = 0 }
+    @seqs             = opts[:seqs]              || Hash.new
 
     @type   = Hash.new
     @lock   = Mutex.new
@@ -39,11 +39,11 @@ class Franz::Multiline
     @stop = true
     @t2.kill
     @t1.join
-    return @seq
+    return @seqs
   end
 
 private
-  attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :lock, :buffer, :seq
+  attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :lock, :buffer, :seqs
 
   def type path
     begin
@@ -66,8 +66,12 @@ private
   end
 
   def enqueue path, message
-    s = seq[path] += 1 rescue 0 # In case the replacement hash doesn have default constructor
-    multiline_events.push type: type(path), path: path, message: message, seq: s += 1
+    begin
+      seq = seqs.fetch(path)
+    rescue KeyError
+      seq, seqs[path] = 1, 1
+    end
+    multiline_events.push type: type(path), path: path, message: message, seq: seq
   end
 
   def capture 

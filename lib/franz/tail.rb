@@ -4,13 +4,13 @@ require 'buftok'
 
 
 class Franz::Tail
-  attr_reader :cursor
+  attr_reader :cursors
 
-  def initialize opts={}, cursor=nil
+  def initialize opts={}
     @watch_events      = opts[:watch_events]      || []
     @tail_events       = opts[:tail_events]       || []
     @eviction_interval = opts[:eviction_interval] || 5
-    @cursor            = cursor                   || Hash.new
+    @cursors           = opts[:cursors]           || Hash.new
 
     @buffer  = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
     @file    = Hash.new
@@ -55,7 +55,7 @@ class Franz::Tail
     @stop = true
     @t2.kill
     @t1.join
-    return @cursor
+    return @cursors
   end
 
 private
@@ -67,11 +67,11 @@ private
 
   def open path
     return true unless file[path].nil?
-    pos = @cursor.include?(path) ? @cursor[path] : 0
+    pos = @cursors.include?(path) ? @cursors[path] : 0
     begin
       file[path] = File.open(path)
       file[path].sysseek pos, IO::SEEK_SET
-      @cursor[path] = pos
+      @cursors[path] = pos
       @changed[path] = Time.now.to_i
     rescue Errno::ENOENT
       return false
@@ -98,7 +98,7 @@ private
       rescue EOFError, Errno::ENOENT
         # we're done here
       end
-      @cursor[path] = file[path].pos
+      @cursors[path] = file[path].pos
     end
 
     @changed[path] = Time.now.to_i
@@ -108,7 +108,7 @@ private
   def close path
     @reading[path] = true # prevent evict from interrupting
     file.delete(path).close if file.include? path
-    @cursor.delete(path)
+    @cursors.delete(path)
     @changed.delete(path)
     @reading.delete(path)
   end
