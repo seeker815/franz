@@ -1,3 +1,5 @@
+require 'logger'
+
 class Franz::Discover
   def initialize opts={}
     @configs     = opts[:configs]     || []
@@ -5,6 +7,7 @@ class Franz::Discover
     @deletions   = opts[:deletions]   || []
     @interval    = opts[:interval]    || 1
     @known       = opts[:known]       || []
+    @logger      = opts[:logger]      || Logger.new(STDOUT)
 
     @configs = configs.map do |config|
       config[:includes] ||= []
@@ -16,10 +19,15 @@ class Franz::Discover
 
     @thread = Thread.new do
       until @stop
-        @known.delete deletions.pop until deletions.empty?
+        until deletions.empty?
+          d = deletions.pop
+          @known.delete d
+          log.debug 'deleted: %s' % d.inspect
+        end
         discover.each do |discovery|
           discoveries.push discovery
           @known.push discovery
+          log.debug 'discovered: %s' % discovery.inspect
         end
         sleep interval
       end
@@ -34,6 +42,8 @@ class Franz::Discover
 
 private
   attr_reader :configs, :discoveries, :deletions, :interval, :known
+
+  def log ; @logger end
 
   def discover
     discovered = []

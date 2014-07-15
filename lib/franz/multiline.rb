@@ -1,3 +1,4 @@
+require 'logger'
 require 'thread'
 
 require_relative 'sash'
@@ -11,7 +12,8 @@ class Franz::Multiline
     @tail_events      = opts[:tail_events]      || []
     @multiline_events = opts[:multiline_events] || []
     @flush_interval   = opts[:flush_interval]   || 5
-    @seqs             = opts[:seqs]              || Hash.new
+    @seqs             = opts[:seqs]             || Hash.new
+    @logger           = opts[:logger]           || Logger.new(STDOUT)
 
     @types  = Hash.new
     @lock   = Mutex.new
@@ -44,6 +46,8 @@ class Franz::Multiline
 private
   attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :seqs, :types, :lock, :buffer
 
+  def log ; @logger end
+
   def type path
     begin
       @types.fetch path
@@ -73,7 +77,11 @@ private
   end
 
   def enqueue path, message
-    multiline_events.push path: path, message: message, type: type(path), seq: seq(path)
+    t, s = type(path), seq(path)
+    log.debug 'enqueue: path=%s type=%s seq=%s' % [
+      path.inspect, t.inspect, s.inspect
+    ]
+    multiline_events.push path: path, message: message, type: t, seq: s
   end
 
   def capture 

@@ -1,27 +1,46 @@
 #!/usr/bin/env ruby
 require 'json'
 require 'thread'
+require 'logger'
 
 require 'bunny'
+require 'trollop'
 require 'franz'
 
-Thread.abort_on_exception = true
 
+# If we find a local config, try to use it
 config = nil
 %w[
   config.json
   %{HOME}/.franz.json
   /etc/franz/franz.json
 ].each do |path|
-  config = Franz::Config.load path % ENV rescue nil
-  break unless config.nil?
+  config = path % ENV
+  break if File.exist? config
 end
 
-state = File.read(config[:state]) rescue nil
+opts = Trollop::options(ARGV) do
+  version Franz::VERSION
+  banner Franz::ART + "\n\n" + <<-EOS.gsub(/^    /, '')
+    #{Franz::SUMMARY}
+
+    Usage: franz [<options>]
+
+    Options:
+  EOS
+  opt 'config', 'Configuration file to use', type: :string, default: config
+  opt 'debug',  'Enable debugging output', default: false
+end
+
+Thread.abort_on_exception = true
+
+level  = opts['debug'] ? ::Logger::DEBUG : ::Logger::INFO
+logger = Franz::Logger.spawn level
+config = Franz::Config.load opts['config']
+state  = File.read(config[:state]) rescue nil
 unless state.nil?
-  $stderr.print 'Loading... '
   state = Marshal.load state
-  $stderr.puts 'Done!'
+  logger.info 'Loaded!'
 end
 
 begin
@@ -29,20 +48,20 @@ begin
 
   fout = Franz::Output.new \
     input: io,
-    output: config[:output]
+    output: config[:output],
+    logger: logger
 
   fin = Franz::Input.new \
     input: config[:input],
     output: io,
-    state: state
+    state: state,
+    logger: logger
 
   fout.join
 
 rescue Interrupt
-  $stderr.puts
-  $stderr.print 'Saving... '
+  logger.info 'Saving... '
   File.open(config[:state], 'w') do |f|
     f.write Marshal.dump(fin.stop)
   end
-  $stderr.puts 'Done!'
 end

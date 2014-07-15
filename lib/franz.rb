@@ -1,6 +1,7 @@
 require_relative 'franz/config'
 require_relative 'franz/discover'
 require_relative 'franz/input'
+require_relative 'franz/logger'
 require_relative 'franz/multiline'
 require_relative 'franz/output'
 require_relative 'franz/queue'

@@ -1,3 +1,5 @@
+require 'logger'
+
 require_relative 'helpers'
 
 
@@ -10,6 +12,7 @@ class Franz::Watch
     @watch_events = opts[:watch_events] || []
     @interval     = opts[:interval]     || 1
     @stats        = opts[:stats]        || Hash.new
+    @logger       = opts[:logger]       || Logger.new(STDOUT)
 
     # Need to resend old events to make sure Tail catches up
     stats.each do |path, old_stat|
@@ -21,7 +24,8 @@ class Franz::Watch
     @thread = Thread.new do
       until @stop
         until discoveries.empty?
-          @stats[discoveries.pop] = nil
+          d = discoveries.pop
+          @stats[d] = nil
         end
         watch.each do |deleted|
           @stats.delete deleted
@@ -41,7 +45,12 @@ class Franz::Watch
 private
   attr_reader :discoveries, :deletions, :watch_events, :interval, :stats
 
+  def log ; @logger end
+
   def enqueue name, path, size=nil
+    log.debug 'enqueue: name=%s path=%s size=%s' % [
+      name.inspect, path.inspect, size.inspect
+    ]
     watch_events.push name: name, path: path, size: size
   end
 
@@ -55,7 +64,7 @@ private
         enqueue :created, path
       elsif file_deleted? old_stat, stat
         enqueue :deleted, path
-        deleted.push path # deal with this below
+        deleted << path
       end
 
       if file_replaced? old_stat, stat

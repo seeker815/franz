@@ -1,3 +1,4 @@
+require 'logger'
 require 'pathname'
 
 require 'buftok'
@@ -12,6 +13,7 @@ class Franz::Tail
     @eviction_interval = opts[:eviction_interval] || 5
     @block_size        = opts[:block_size]        || 5120 # 5 KiB
     @cursors           = opts[:cursors]           || Hash.new
+    @logger            = opts[:logger]            || Logger.new(STDOUT)
 
     @buffer  = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
     @file    = Hash.new
@@ -35,12 +37,12 @@ class Franz::Tail
         when :created
         when :replaced
           close e[:path]
-          read e[:path], e[:size], e[:type]
+          read e[:path], e[:size]
         when :truncated
           close e[:path]
-          read e[:path], e[:size], e[:type]
+          read e[:path], e[:size]
         when :appended
-          read e[:path], e[:size], e[:type]
+          read e[:path], e[:size]
         when :deleted
           close e[:path]
         else
@@ -60,6 +62,8 @@ class Franz::Tail
 private
   attr_reader :watch_events, :tail_events, :eviction_interval, :block_size, :cursors, :file, :buffer, :changed, :reading
 
+  def log ; @logger end
+
   def realpath path
     Pathname.new(path).realpath.to_s
   end
@@ -75,10 +79,11 @@ private
     rescue Errno::ENOENT
       return false
     end
+    log.debug 'opened: path=%s' % path.inspect
     return true
   end
 
-  def read path, size, type
+  def read path, size
     @reading[path] = true
 
     loop do
@@ -92,7 +97,7 @@ private
       begin
         data = file[path].sysread @block_size
         buffer[path].extract(data).each do |line|
-          tail_events.push type: type, path: realpath(path), line: line
+          tail_events.push path: realpath(path), line: line
         end
       rescue EOFError, Errno::ENOENT
         # we're done here
@@ -100,6 +105,7 @@ private
       @cursors[path] = file[path].pos
     end
 
+    log.debug 'read: path=%s size=%s' % [ path.inspect, size.inspect ]
     @changed[path] = Time.now.to_i
     @reading.delete path
   end
@@ -110,6 +116,7 @@ private
     @cursors.delete(path)
     @changed.delete(path)
     @reading.delete(path)
+    log.debug 'closed: path=%s' % path.inspect
   end
 
   def evict
@@ -118,6 +125,7 @@ private
       next unless @changed[path] < Time.now.to_i - eviction_interval
       next unless file.include? path
       file.delete(path).close
+      log.debug 'evicted: path=%s' % path.inspect
     end
   end
 end

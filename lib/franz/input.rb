@@ -1,3 +1,5 @@
+require 'logger'
+
 require 'deep_merge'
 
 require_relative 'tail'
@@ -10,6 +12,7 @@ require_relative 'queue'
 class Franz::Input
   def initialize opts={}
     opts = {
+      logger: Logger.new(STDOUT),
       state: nil,
       output: nil,
       input: {
@@ -45,6 +48,7 @@ class Franz::Input
       deletions: deletions,
       configs: opts[:input][:configs],
       interval: opts[:input][:discover_interval],
+      logger: opts[:logger],
       known: known
 
     @watch = Franz::Watch.new \
@@ -52,12 +56,14 @@ class Franz::Input
       deletions: deletions,
       watch_events: watch_events,
       interval: opts[:input][:watch_interval],
+      logger: opts[:logger],
       stats: stats
 
     @tail = Franz::Tail.new \
       watch_events: watch_events,
       tail_events: tail_events,
       eviction_interval: opts[:input][:eviction_interval],
+      logger: opts[:logger],
       cursors: cursors
 
     @multiline = Franz::Multiline.new \
@@ -65,6 +71,7 @@ class Franz::Input
       tail_events: tail_events,
       multiline_events: opts[:output],
       flush_interval: opts[:input][:flush_interval],
+      logger: opts[:logger],
       seqs: seqs
   end
 
