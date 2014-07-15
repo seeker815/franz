@@ -16,7 +16,7 @@ config = nil
   %{HOME}/.franz.json
   /etc/franz/franz.json
 ].each do |path|
-  config = path % ENV
+  config = path % ENV rescue nil
   break if File.exist? config
 end
 
