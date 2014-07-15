@@ -28,6 +28,7 @@
 #
 require 'thread'
 
+
 module Franz
   class Condition
     def initialize lock

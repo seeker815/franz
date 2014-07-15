@@ -1,23 +1,23 @@
 require 'json'
-require 'socket'
 
 require 'bunny'
 require 'deep_merge'
 
 
-module Franz::Output ; end
-
-class Franz::Output::Rabbitmq
-  @@host = Socket.gethostname
-
+# RabbitMQ output for Franz. You must declare an x-consistent-hash type
+# exchange, as this output randomly generates Integers as routing keys.
+class Franz::Output::RabbitMQ
+  # Start a new output in the background. We'll consume from the input queue
+  # and ship events to the configured RabbitMQ cluster.
+  #
+  # @param opts [Hash] a complex Hash for output configuration
   def initialize opts={}
     opts = {
       input: nil,
       output: {
         exchange: {
           name: 'test',
-          durable: true,
-          type: 'x-consistent-hash'
+          durable: true
         },
         connection: {
           host: 'localhost',
@@ -31,7 +31,8 @@ class Franz::Output::Rabbitmq
 
     channel  = rabbit.create_channel
     exchange = opts[:output][:exchange].delete(:name)
-    exchange = channel.exchange exchange, opts[:output][:exchange]
+    exchange = channel.exchange exchange, \
+      opts[:output][:exchange].merge(type: 'x-consistent-hash')
 
     @stop = false
     @foreground = opts[:foreground]
@@ -40,21 +41,26 @@ class Franz::Output::Rabbitmq
       rand = Random.new
       until @stop
         exchange.publish \
-          JSON::generate(opts[:input].shift.merge(host: @@host)),
-          persistent: false, routing_key: rand.rand(1_000_000)
+          JSON::generate(opts[:input].shift),
+          routing_key: rand.rand(1_000_000),
+          persistent: false
       end
     end
 
     @thread.join if @foreground
   end
 
+  # Join the background thread. Effectively only once.
   def join
     return if @foreground
     @foreground = true
     @thread.join
   end
 
+  # Stop the output. Effectively only once.
   def stop
-    join
+    return if @foreground
+    @foreground = true
+    @thread.kill
   end
 end

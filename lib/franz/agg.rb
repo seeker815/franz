@@ -1,23 +1,26 @@
 require 'logger'
 require 'thread'
+require 'socket'
 
 require_relative 'sash'
 
 
-class Franz::Multiline
+class Franz::Agg
+  @@host = Socket.gethostname
+
   attr_reader :seqs
 
   def initialize opts={}, seqs=nil
-    @configs          = opts[:configs]          || []
-    @tail_events      = opts[:tail_events]      || []
-    @multiline_events = opts[:multiline_events] || []
-    @flush_interval   = opts[:flush_interval]   || 5
-    @seqs             = opts[:seqs]             || Hash.new
-    @logger           = opts[:logger]           || Logger.new(STDOUT)
+    @configs        = opts[:configs]        || []
+    @tail_events    = opts[:tail_events]    || []
+    @agg_events     = opts[:agg_events]     || []
+    @flush_interval = opts[:flush_interval] || 5
+    @seqs           = opts[:seqs]           || Hash.new
+    @logger         = opts[:logger]         || Logger.new(STDOUT)
 
     @types  = Hash.new
     @lock   = Mutex.new
-    @buffer = Sash.new
+    @buffer = Franz::Sash.new
     @stop   = false
 
     @t1 = Thread.new do
@@ -44,7 +47,7 @@ class Franz::Multiline
   end
 
 private
-  attr_reader :configs, :tail_events, :multiline_events, :flush_interval, :seqs, :types, :lock, :buffer
+  attr_reader :configs, :tail_events, :agg_events, :flush_interval, :seqs, :types, :lock, :buffer
 
   def log ; @logger end
 
@@ -77,10 +80,10 @@ private
     log.debug 'enqueue: path=%s type=%s seq=%s' % [
       path.inspect, t.inspect, s.inspect
     ]
-    multiline_events.push path: path, message: message, type: t, seq: s
+    agg_events.push path: path, message: message, type: t, seq: s, host: @@host
   end
 
-  def capture 
+  def capture
     event     = tail_events.shift
     multiline = config(event[:path])[:multiline]
     if multiline.nil?
@@ -99,7 +102,7 @@ private
     end
   end
 
-  def flush 
+  def flush
     lock.synchronize do
       started = Time.now
       buffer.keys.each do |path|

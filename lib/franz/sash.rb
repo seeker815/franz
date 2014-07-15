@@ -11,7 +11,7 @@ require 'thread'
 #     s.mtime :key           # => 2014-02-18 21:24:30 -0800
 #     s.flush :key           # => [:value, :crazy]
 #
-class Sash
+class Franz::Sash
   def initialize
     @mutex = Mutex.new
     @mtime = Hash.new { |default, key| default[key] = nil }

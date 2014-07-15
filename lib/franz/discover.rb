@@ -1,6 +1,14 @@
 require 'logger'
 
+
+# Discover performs half of file existence detection by expanding globs and
+# keeping track of files known to Franz. Discover requires a deletions Queue to
+# maintain this state, so it's fairly useless without a Watch.
 class Franz::Discover
+
+  # Start a new discovery thread in the background.
+  #
+  # @param opts [Hash] a complex Hash for discovery configuration
   def initialize opts={}
     @configs     = opts[:configs]     || []
     @discoveries = opts[:discoveries] || []
@@ -34,6 +42,7 @@ class Franz::Discover
     end
   end
 
+  # Stop the discovery. Effectively only once.
   def stop
     @stop = true
     @thread.join

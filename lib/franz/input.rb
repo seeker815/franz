@@ -2,14 +2,21 @@ require 'logger'
 
 require 'deep_merge'
 
+require_relative 'agg'
 require_relative 'tail'
 require_relative 'watch'
 require_relative 'discover'
-require_relative 'multiline'
 require_relative 'queue'
 
 
+# File input for Franz. Really, the only input for Franz, so I hope you like it.
 class Franz::Input
+
+  # Start a new input in the background. We'll generate a stream of events by
+  # watching the filesystem for changes (Franz::Discover and Franz::Watch),
+  # tailing files (Franz::Tail), and generating events (Franz::Agg)
+  #
+  # @param opts [Hash] a complex Hash for output configuration
   def initialize opts={}
     opts = {
       logger: Logger.new(STDOUT),
@@ -66,19 +73,22 @@ class Franz::Input
       logger: opts[:logger],
       cursors: cursors
 
-    @multiline = Franz::Multiline.new \
+    @agg = Franz::Agg.new \
       configs: opts[:input][:configs],
       tail_events: tail_events,
-      multiline_events: opts[:output],
+      agg_events: opts[:output],
       flush_interval: opts[:input][:flush_interval],
       logger: opts[:logger],
       seqs: seqs
   end
 
+  # Stop everything. Has the effect of draining all the Queues and waiting on
+  # auxilliarly threads (e.g. eviction) to complete full intervals, so it may
+  # ordinarily take tens of seconds, depends on your configuration.
   def stop
-    stats   = @watch.stop     rescue {}
-    cursors = @tail.stop      rescue {}
-    seqs    = @multiline.stop rescue {}
+    stats   = @watch.stop rescue {}
+    cursors = @tail.stop  rescue {}
+    seqs    = @agg.stop   rescue {}
     stats.keys.each do |path|
       stats[path][:cursor] = cursors[path] rescue nil
       stats[path][:seq]    = seqs[path]    rescue nil
