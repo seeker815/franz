@@ -1,12 +1,12 @@
 PATH
   remote: .
   specs:
-    franz (1.0.3)
-      buftok
-      bunny
-      colorize
-      deep_merge
-      trollop
+    franz (1.0.4)
+      buftok (~> 0)
+      bunny (~> 1)
+      colorize (~> 0)
+      deep_merge (~> 1)
+      trollop (~> 2)
 
 GEM
   remote: http://rubygems.org/
