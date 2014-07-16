@@ -11,11 +11,11 @@ Gem::Specification.new do |s|
   s.summary     = Franz::SUMMARY
   s.description = Franz::SUMMARY + '.'
 
-  s.add_runtime_dependency 'bunny'
-  s.add_runtime_dependency 'buftok'
-  s.add_runtime_dependency 'trollop'
-  s.add_runtime_dependency 'colorize'
-  s.add_runtime_dependency 'deep_merge'
+  s.add_runtime_dependency 'bunny', '~> 0'
+  s.add_runtime_dependency 'buftok', '~> 0'
+  s.add_runtime_dependency 'trollop', '~> 1'
+  s.add_runtime_dependency 'colorize', '~> 0'
+  s.add_runtime_dependency 'deep_merge', '~> 0'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- test/*`.split("\n")
