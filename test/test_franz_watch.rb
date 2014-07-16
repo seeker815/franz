@@ -8,6 +8,7 @@ require 'deep_merge'
 
 require_relative '../lib/franz'
 
+Thread.abort_on_exception = true
 
 class TestFranzWatch < MiniTest::Test
   def setup

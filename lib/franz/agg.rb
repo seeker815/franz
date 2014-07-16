@@ -14,7 +14,6 @@ module Franz
 
     attr_reader :seqs
 
-
     # Start a new Agg thread in the background.
     #
     # @param opts [Hash] a complex Hash for discovery configuration
@@ -69,9 +68,11 @@ module Franz
       rescue KeyError
         configs.each do |config|
           type = config[:type] if config[:includes].any? { |glob|
-            File.fnmatch?(glob, path) && !config[:excludes].any? { |xglob|
-              File.fnmatch?(xglob, path)
+            included = File.fnmatch? glob, path
+            excluded = config[:excludes].any? { |exlude_glob|
+              File.fnmatch? exlude_glob, path
             }
+            included && !excluded
           }
           return @types[path] = type unless type.nil?
         end
@@ -80,23 +81,28 @@ module Franz
     end
 
     def config path
+      # log.debug 'config path=%s' % path.inspect
       configs.select { |c| c[:type] == type(path) }.shift
     end
 
     def seq path
-      seqs[path] = seqs.fetch(path) { 1 }
+      # log.debug 'seq path=%s' % path.inspect
+      seqs[path] = seqs.fetch(path) rescue 1
     end
 
     def enqueue path, message
       t, s = type(path), seq(path)
-      log.debug 'enqueue: path=%s type=%s seq=%s' % [
-        path.inspect, t.inspect, s.inspect
-      ]
+      # log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
+      #   type.inspect, path.inspect, seq.inspect, message.inspect
+      # ]
       agg_events.push path: path, message: message, type: t, seq: s, host: @@host
     end
 
     def capture
       event     = tail_events.shift
+      # log.debug 'received path=%s line=%s' % [
+      #   event[:path], event[:line]
+      # ]
       multiline = config(event[:path])[:multiline]
       if multiline.nil?
         enqueue event[:path], event[:line]
@@ -119,6 +125,7 @@ module Franz
         started = Time.now
         buffer.keys.each do |path|
           if started - buffer.mtime(path) >= flush_interval
+            # log.debug 'flushing path=%s' % path.inspect
             buffered = buffer.remove(path)
             lines = buffered.map { |e| e[:line] }
             unless lines.empty?

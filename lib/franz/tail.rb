@@ -107,6 +107,7 @@ module Franz
         begin
           data = file[path].sysread @block_size
           buffer[path].extract(data).each do |line|
+            log.debug 'captured: path=%s line=%s' % [ path, line ]
             tail_events.push path: realpath(path), line: line
           end
         rescue EOFError, Errno::ENOENT
