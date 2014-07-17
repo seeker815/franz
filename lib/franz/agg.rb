@@ -10,17 +10,23 @@ module Franz
   # also applies the "host" and "type" fields. Basically, it does all the post-
   # processing after we've retreived a line from a file.
   class Agg
-    @@host = Socket.gethostname
+    @@host = Socket.gethostname # We'll apply the hostname to all events
 
     attr_reader :seqs
 
     # Start a new Agg thread in the background.
     #
-    # @param opts [Hash] a complex Hash for discovery configuration
-    def initialize opts={}, seqs=nil
-      @configs        = opts[:configs]        || []
-      @tail_events    = opts[:tail_events]    || []
-      @agg_events     = opts[:agg_events]     || []
+    # @param [Hash] opts options for the aggregator
+    # @option opts [Array<Hash>] :configs ([]) file input configuration
+    # @option opts [Queue] :tail_events (Queue.new) "input" queue from Tail
+    # @option opts [Queue] :agg_events (Queue.new) "output" queue
+    # @option opts [Integer] :flush_interval (5) seconds between flushes
+    # @option opts [Hash<Path,Fixnum>] :seqs ({}) internal "seqs" state
+    # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
+    def initialize opts={}
+      @configs        = opts[:configs]        || Array.new
+      @tail_events    = opts[:tail_events]    || Queue.new
+      @agg_events     = opts[:agg_events]     || Queue.new
       @flush_interval = opts[:flush_interval] || 5
       @seqs           = opts[:seqs]           || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)

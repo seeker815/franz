@@ -9,14 +9,20 @@ module Franz
 
     # Start a new Watch thread in the background.
     #
-    # @param opts [Hash] a complex Hash for tail configuration
+    # @param [Hash] opts options for the watch
+    # @option opts [Queue] :discoveries (Queue.new) "input" queue of discovered paths
+    # @option opts [Queue] :deletions (Queue.new) "output" queue of deleted paths
+    # @option opts [Queue] :watch_events (Queue.new) "output" queue of file events
+    # @option opts [Fixnum] :watch_interval (1) seconds between watch rounds
+    # @option opts [Hash<Path,State>] :stats ([]) internal "stats" state
+    # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
-      @discoveries  = opts[:discoveries]  || []
-      @deletions    = opts[:deletions]    || []
-      @watch_events = opts[:watch_events] || []
-      @interval     = opts[:interval]     || 1
-      @stats        = opts[:stats]        || Hash.new
-      @logger       = opts[:logger]       || Logger.new(STDOUT)
+      @discoveries    = opts[:discoveries]    || []
+      @deletions      = opts[:deletions]      || []
+      @watch_events   = opts[:watch_events]   || []
+      @watch_interval = opts[:watch_interval] || 1
+      @stats          = opts[:stats]          || Hash.new
+      @logger         = opts[:logger]         || Logger.new(STDOUT)
 
       # Need to resend old events to make sure Tail catches up
       stats.each do |path, old_stat|
@@ -35,7 +41,7 @@ module Franz
             @stats.delete deleted
             deletions.push deleted
           end
-          sleep interval
+          sleep watch_interval
         end
       end
     end
@@ -51,7 +57,7 @@ module Franz
     end
 
   private
-    attr_reader :discoveries, :deletions, :watch_events, :interval, :stats
+    attr_reader :discoveries, :deletions, :watch_events, :watch_interval, :stats
 
     def log ; @logger end
 

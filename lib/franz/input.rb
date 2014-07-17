@@ -12,12 +12,15 @@ module Franz
 
   # File input for Franz. Really, the only input for Franz, so I hope you like it.
   class Input
-
     # Start a new input in the background. We'll generate a stream of events by
     # watching the filesystem for changes (Franz::Discover and Franz::Watch),
     # tailing files (Franz::Tail), and generating events (Franz::Agg)
     #
-    # @param opts [Hash] a complex Hash for output configuration
+    # @param [Hash] opts options for the aggregator
+    # @option opts [Hash] :input ({}) "input" configuration
+    # @option opts [Queue] :output (Queue.new) "output" queue
+    # @option opts [Hash<Path,State>] :state ({}) internal state
+    # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
       opts = {
         logger: Logger.new(STDOUT),
@@ -55,7 +58,7 @@ module Franz
         discoveries: discoveries,
         deletions: deletions,
         configs: opts[:input][:configs],
-        interval: opts[:input][:discover_interval],
+        discover_interval: opts[:input][:discover_interval],
         logger: opts[:logger],
         known: known
 
@@ -63,7 +66,7 @@ module Franz
         discoveries: discoveries,
         deletions: deletions,
         watch_events: watch_events,
-        interval: opts[:input][:watch_interval],
+        watch_interval: opts[:input][:watch_interval],
         logger: opts[:logger],
         stats: stats
 

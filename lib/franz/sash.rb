@@ -4,13 +4,14 @@ module Franz
 
   # Sash - A threadsafe hash/array hybrid with access times
   #
-  #     s = Sash.new           # => #<Sash...>
-  #     s.keys                 # => []
-  #     s.insert :key, :value  # => value
-  #     s.get :key             # => [:value]
-  #     s.insert :key, :crazy  # => :crazy
-  #     s.mtime :key           # => 2014-02-18 21:24:30 -0800
-  #     s.flush :key           # => [:value, :crazy]
+  # @example
+  #   s = Sash.new           # => #<Sash...>
+  #   s.keys                 # => []
+  #   s.insert :key, :value  # => value
+  #   s.get :key             # => [:value]
+  #   s.insert :key, :crazy  # => :crazy
+  #   s.mtime :key           # => 2014-02-18 21:24:30 -0800
+  #   s.flush :key           # => [:value, :crazy]
   #
   # Think of it like a Hash where the keys map to "value buffers"
   class Sash
@@ -24,7 +25,7 @@ module Franz
 
     # Grab a list of known keys.
     #
-    # @return [Array]
+    # @return [Array<Object>]
     def keys ; @hash.keys end
 
     # Insert a value into a key's value buffer.
@@ -43,22 +44,30 @@ module Franz
 
     # Return a key's value buffer.
     #
-    # @return [Array]
+    # @param [Object] key
+    #
+    # @return [Array<Object>]
     def get key ; @hash[key] end
 
     # Remove and return a key's value buffer.
     #
-    # @return [Array]
+    # @param [Object] key
+    #
+    # @return [Array<Object>]
     def remove key ; @hash.delete(key) end
 
     # Return the last time the key's value buffer was modified.
+    #
+    # @param [Object] key
     #
     # @return [Time]
     def mtime key ; @mtime[key] end
 
     # Flush and return a key's value buffer.
     #
-    # @return [Array]
+    # @param [Object] key
+    #
+    # @return [Array<Object>]
     def flush key
       value = nil
       @mutex.synchronize do

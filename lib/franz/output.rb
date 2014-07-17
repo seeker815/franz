@@ -12,7 +12,9 @@ module Franz
     # Start a new output in the background. We'll consume from the input queue
     # and ship events to the configured RabbitMQ cluster.
     #
-    # @param opts [Hash] a complex Hash for output configuration
+    # @param [Hash] opts options for the output
+    # @option opts [Queue] :input (Queue.new) "input" queue
+    # @option opts [Hash] :output ({}) "output" configuration
     def initialize opts={}
       opts = {
         input: nil,
@@ -52,14 +54,14 @@ module Franz
       @thread.join if @foreground
     end
 
-    # Join the background thread. Effectively only once.
+    # Join the Output thread. Effectively only once.
     def join
       return if @foreground
       @foreground = true
       @thread.join
     end
 
-    # Stop the output. Effectively only once.
+    # Stop the Output thread. Effectively only once.
     def stop
       return if @foreground
       @foreground = true
