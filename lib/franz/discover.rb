@@ -22,6 +22,7 @@ class Franz::Discover
     @discover_interval = opts[:discover_interval] || 1
     @known             = opts[:known]             || []
     @logger            = opts[:logger]            || Logger.new(STDOUT)
+    @ignore_before     = opts[:ignore_before]     || 0
 
     @configs = configs.map do |config|
       config[:includes] ||= []
@@ -71,6 +72,7 @@ private
           next if config[:excludes].any? { |exclude| File.fnmatch? exclude, path }
           next if known.include? path
           next unless File.file? path
+          next if File.mtime(path).to_i <= @ignore_before
           discovered.push path
         end
       end
