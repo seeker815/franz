@@ -1,6 +1,7 @@
 require 'logger'
 require 'thread'
 require 'socket'
+require 'pathname'
 
 require_relative 'sash'
 
@@ -96,12 +97,16 @@ module Franz
       seqs[path] = seqs.fetch(path) rescue 1
     end
 
+    def real_path path
+      Pathname.new(path).realpath.to_s
+    end
+
     def enqueue path, message
-      t, s = type(path), seq(path)
+      p, t, s = real_path(path), type(path), seq(path)
       # log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
       #   type.inspect, path.inspect, seq.inspect, message.inspect
       # ]
-      agg_events.push path: path, message: message, type: t, seq: s, host: @@host
+      agg_events.push path: p, message: message, type: t, seq: s, host: @@host
     end
 
     def capture

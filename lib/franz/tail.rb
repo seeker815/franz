@@ -1,5 +1,4 @@
 require 'logger'
-require 'pathname'
 
 require 'buftok'
 
@@ -74,10 +73,6 @@ module Franz
 
     def log ; @logger end
 
-    def realpath path
-      Pathname.new(path).realpath.to_s
-    end
-
     def open path
       return true unless file[path].nil?
       pos = @cursors.include?(path) ? @cursors[path] : 0
@@ -108,7 +103,7 @@ module Franz
           data = file[path].sysread @block_size
           buffer[path].extract(data).each do |line|
             log.debug 'captured: path=%s line=%s' % [ path, line ]
-            tail_events.push path: realpath(path), line: line
+            tail_events.push path: path, line: line
           end
         rescue EOFError, Errno::ENOENT
           # we're done here
