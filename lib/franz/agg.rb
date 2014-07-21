@@ -94,7 +94,7 @@ module Franz
 
     def seq path
       # log.debug 'seq path=%s' % path.inspect
-      seqs[path] = seqs.fetch(path) rescue 1
+      seqs[path] = seqs.fetch(path, 0) + 1
     end
 
     def real_path path
@@ -102,7 +102,9 @@ module Franz
     end
 
     def enqueue path, message
-      p, t, s = real_path(path), type(path), seq(path)
+      p = real_path path
+      t = type path
+      s = seq p
       # log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
       #   type.inspect, path.inspect, seq.inspect, message.inspect
       # ]
