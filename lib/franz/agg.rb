@@ -88,12 +88,10 @@ module Franz
     end
 
     def config path
-      # log.debug 'config path=%s' % path.inspect
       configs.select { |c| c[:type] == type(path) }.shift
     end
 
     def seq path
-      # log.debug 'seq path=%s' % path.inspect
       seqs[path] = seqs.fetch(path, 0) + 1
     end
 
@@ -106,17 +104,17 @@ module Franz
       t = type path
       s = seq p
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
-      # log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
-      #   t.inspect, p.inspect, s.inspect, m.inspect
-      # ]
+      log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
+        t.inspect, p.inspect, s.inspect, m.inspect
+      ]
       agg_events.push path: p, message: m, type: t, seq: s, host: @@host
     end
 
     def capture
       event     = tail_events.shift
-      # log.debug 'received path=%s line=%s' % [
-      #   event[:path], event[:line]
-      # ]
+      log.debug 'received path=%s line=%s' % [
+        event[:path], event[:line]
+      ]
       multiline = config(event[:path])[:multiline]
       if multiline.nil?
         enqueue event[:path], event[:line]
@@ -139,7 +137,7 @@ module Franz
         started = Time.now
         buffer.keys.each do |path|
           if started - buffer.mtime(path) >= flush_interval
-            # log.debug 'flushing path=%s' % path.inspect
+            log.debug 'flushing path=%s' % path.inspect
             buffered = buffer.remove(path)
             lines = buffered.map { |e| e[:line] }
             unless lines.empty?
