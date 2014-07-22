@@ -73,7 +73,7 @@ begin
   # so we'll have to wait here in main or else we'll just exit.
   fout.join
 
-rescue Interrupt
+rescue SystemExit, Interrupt
   # And here's where we generate the state file. We ask our input to stop
   # processing events and drain, which also happens to return a state Hash.
   logger.info 'Saving... '
