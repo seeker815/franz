@@ -105,10 +105,11 @@ module Franz
       p = real_path path
       t = type path
       s = seq p
+      m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
       # log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
-      #   type.inspect, path.inspect, seq.inspect, message.inspect
+      #   t.inspect, p.inspect, s.inspect, m.inspect
       # ]
-      agg_events.push path: p, message: message, type: t, seq: s, host: @@host
+      agg_events.push path: p, message: m, type: t, seq: s, host: @@host
     end
 
     def capture
