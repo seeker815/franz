@@ -20,9 +20,9 @@ class Franz::Discover
     @discoveries       = opts[:discoveries]       || []
     @deletions         = opts[:deletions]         || []
     @discover_interval = opts[:discover_interval] || 1
+    @ignore_before     = opts[:ignore_before]     || 0
     @known             = opts[:known]             || []
     @logger            = opts[:logger]            || Logger.new(STDOUT)
-    @ignore_before     = opts[:ignore_before]     || 0
 
     @configs = configs.map do |config|
       config[:includes] ||= []

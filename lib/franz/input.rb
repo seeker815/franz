@@ -59,6 +59,7 @@ module Franz
         deletions: deletions,
         configs: opts[:input][:configs],
         discover_interval: opts[:input][:discover_interval],
+        ignore_before: opts[:input][:ignore_before],
         logger: opts[:logger],
         known: known
 
