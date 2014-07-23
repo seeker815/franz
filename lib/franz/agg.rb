@@ -117,14 +117,14 @@ module Franz
       ]
       multiline = config(event[:path])[:multiline]
       if multiline.nil?
-        enqueue event[:path], event[:line]
+        enqueue event[:path], event[:line] unless event[:line].empty?
       else
         lock.synchronize do
           if event[:line] =~ multiline
             buffered = buffer.flush(event[:path])
-            lines = buffered.map { |e| e[:line] }
+            lines = buffered.map { |e| e[:line] }.join("\n")
             unless lines.empty?
-              enqueue event[:path], lines.join("\n")
+              enqueue event[:path], lines
             end
           end
           buffer.insert event[:path], event
@@ -139,9 +139,9 @@ module Franz
           if started - buffer.mtime(path) >= flush_interval
             log.debug 'flushing path=%s' % path.inspect
             buffered = buffer.remove(path)
-            lines = buffered.map { |e| e[:line] }
+            lines = buffered.map { |e| e[:line] }.join("\n")
             unless lines.empty?
-              enqueue path, lines.join("\n")
+              enqueue path, lines
             end
           end
         end
