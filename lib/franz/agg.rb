@@ -107,7 +107,7 @@ module Franz
       log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
         t.inspect, p.inspect, s.inspect, m.inspect
       ]
-      agg_events.push path: p, message: m, type: t, seq: s, host: @@host
+      agg_events.push path: p, message: m, type: t, host: @@host, '@seq' => s
     end
 
     def capture
