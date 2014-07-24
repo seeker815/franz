@@ -144,7 +144,7 @@ module Franz
 
     # Write a checkpoint file given the current state
     def checkpoint
-      old_checkpoints = Dir[@checkpoint_glob].to_a
+      old_checkpoints = Dir[@checkpoint_glob].sort_by { |p| File.mtime p }
       path = @checkpoint_path % Time.now
       File.open(path, 'w') do |f|
         f.write Marshal.dump(state)
