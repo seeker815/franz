@@ -140,6 +140,7 @@ module Franz
       cursors = @tail.state
       seqs    = @agg.state
       stats.keys.each do |path|
+        stats[path] ||= {}
         stats[path][:cursor] = cursors.fetch(path, nil)
         stats[path][:seq] = seqs.fetch(path, nil)
       end
