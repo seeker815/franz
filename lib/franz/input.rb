@@ -59,8 +59,6 @@ module Franz
         last_checkpoint = File.read(last_checkpoint_path)
         state = Marshal.load last_checkpoint
         log.info 'Loaded %s' % last_checkpoint_path.inspect
-        require 'json'
-        log.fatal JSON::pretty_generate(state)
       end
 
       state = state || {}

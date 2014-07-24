@@ -101,7 +101,7 @@ module Franz
     end
 
     def real_path path
-      Pathname.new(path).realpath.to_s
+      Pathname.new(path).realpath.to_s rescue path
     end
 
     def enqueue path, message

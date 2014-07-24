@@ -69,6 +69,7 @@ rescue SignalException => e
 rescue SystemExit, Interrupt => e
   logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
 ensure
+  logger.info 'Bye!'
   fin.stop
   fin.checkpoint
 end
