@@ -1,4 +1,5 @@
 require 'logger'
+require 'fileutils'
 
 require 'deep_merge'
 
@@ -19,12 +20,14 @@ module Franz
     # @param [Hash] opts options for the aggregator
     # @option opts [Hash] :input ({}) "input" configuration
     # @option opts [Queue] :output (Queue.new) "output" queue
-    # @option opts [Hash<Path,State>] :state ({}) internal state
+    # @option opts [Path] :checkpoint ({}) path to checkpoint file
+    # @option opts [Integer] :checkpoint_interval ({}) seconds between checkpoints
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
       opts = {
+        checkpoint: 'franz.*.checkpoint',
+        checkpoint_interval: 30,
         logger: Logger.new(STDOUT),
-        state: nil,
         output: nil,
         input: {
           discover_bound: 4096,
@@ -38,7 +41,25 @@ module Franz
         }
       }.deep_merge!(opts)
 
-      state = opts[:state] || {}
+      @logger = opts[:logger]
+
+      @checkpoint_interval = opts[:checkpoint_interval]
+      @checkpoint_path     = opts[:checkpoint].sub('*', '%d')
+      @checkpoint_glob     = opts[:checkpoint]
+
+      # The checkpoint contains a Marshalled Hash with a compact representation of
+      # stateful inputs to various Franz streaming classes (e.g. the "known" option
+      # to Franz::Discover). This state file is generated automatically every time
+      # the input exits (see below) and also at regular intervals.
+      last_checkpoint_path = Dir[@checkpoint_glob].sort_by { |path| File.mtime path }.pop
+      state = nil
+      unless last_checkpoint_path.nil?
+        last_checkpoint = File.read(last_checkpoint_path)
+        state = Marshal.load last_checkpoint
+        log.info 'Loaded %s' % last_checkpoint_path.inspect
+      end
+
+      state = state || {}
       known = state.keys
       stats, cursors, seqs = {}, {}, {}
       known.each do |path|
@@ -54,7 +75,7 @@ module Franz
       watch_events = Franz::Queue.new opts[:input][:watch_bound]
       tail_events  = Franz::Queue.new opts[:input][:tail_bound]
 
-      Franz::Discover.new \
+      @disover = Franz::Discover.new \
         discoveries: discoveries,
         deletions: deletions,
         configs: opts[:input][:configs],
@@ -85,22 +106,55 @@ module Franz
         flush_interval: opts[:input][:flush_interval],
         logger: opts[:logger],
         seqs: seqs
+
+      @stop = false
+      @t = Thread.new do
+        until @stop
+          checkpoint
+          sleep @checkpoint_interval
+        end
+      end
     end
 
     # Stop everything. Has the effect of draining all the Queues and waiting on
     # auxilliarly threads (e.g. eviction) to complete full intervals, so it may
-    # ordinarily take tens of seconds, depends on your configuration.
+    # ordinarily take tens of seconds, depending on your configuration.
     #
     # @return [Hash] compact internal state
     def stop
-      stats   = @watch.stop rescue {}
-      cursors = @tail.stop  rescue {}
-      seqs    = @agg.stop   rescue {}
+      @stop = true
+      @t.join
+      @watch.stop
+      @tail.stop
+      @agg.stop
+      return state
+    end
+
+    # Return a compact representation of internal state
+    def state
+      stats   = @watch.state
+      cursors = @tail.state
+      seqs    = @agg.state
       stats.keys.each do |path|
         stats[path][:cursor] = cursors[path] rescue nil
         stats[path][:seq]    = seqs[path]    rescue nil
       end
       return stats
     end
+
+    # Write a checkpoint file given the current state
+    def checkpoint
+      old_checkpoints = Dir[@checkpoint_glob].to_a
+      path = @checkpoint_path % Time.now
+      File.open(path, 'w') do |f|
+        f.write Marshal.dump(state)
+      end
+      old_checkpoints.pop # Keep last two checkpoints
+      old_checkpoints.map { |c| FileUtils.rm c }
+      log.info 'Wrote %s' % path.inspect
+    end
+
+  private
+    def log ; @logger end
   end
 end

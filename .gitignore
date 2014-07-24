@@ -5,6 +5,7 @@
 *.pid
 *.swp
 *.state
+*.checkpoint
 .DS_Store
 .yardoc
 doc

@@ -42,16 +42,6 @@ Thread.abort_on_exception = true # Die quickly and with great ceremony
 config = Franz::Config.new opts[:config]
 logger = Franz::Logger.new opts[:debug]
 
-# The state file contains a Marshalled Hash with a compact representation of
-# stateful inputs to various Franz streaming classes (e.g. the "known" option
-# to Franz::Discover). This state file is generated automatically every time
-# the program exits (see below) and loaded now, as the program begins.
-state  = File.read(config[:state]) rescue nil
-unless state.nil?
-  state = Marshal.load state
-  logger.info 'Loaded!'
-end
-
 begin
   io = Franz::Queue.new # N.B. This is a bounded queue
 
@@ -66,8 +56,9 @@ begin
   fin = Franz::Input.new \
     input: config[:input],
     output: io,
-    state: state,
-    logger: logger
+    logger: logger,
+    checkpoint: config[:checkpoint],
+    checkpoint_interval: config[:checkpoint_interval]
 
   # Remember, both the input and output were started up in background threads,
   # so we'll have to wait here in main or else we'll just exit.
@@ -78,10 +69,6 @@ rescue SignalException => e
 rescue SystemExit, Interrupt => e
   logger.fatal e.inspect
 ensure
-  # And here's where we generate the state file. We ask our input to stop
-  # processing events and drain, which also happens to return a state Hash.
-  logger.info 'Saving... '
-  File.open(config[:state], 'w') do |f|
-    f.write Marshal.dump(fin.stop)
-  end
+  fin.stop
+  fin.checkpoint
 end

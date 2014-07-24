@@ -61,11 +61,16 @@ module Franz
     #
     # @return [Hash] internal "cursors" state
     def stop
-      return @cursors if @stop
+      return state if @stop
       @stop = true
       @watch_thread.kill
       @evict_thread.join
-      return @cursors
+      return state
+    end
+
+    # Return the internal "cursors" state
+    def state
+      return @cursors.dup
     end
 
   private

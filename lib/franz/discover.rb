@@ -53,10 +53,15 @@ class Franz::Discover
   #
   # @return [Array] internal "known" state
   def stop
-    return @known if @stop
+    return state if @stop
     @stop = true
     @thread.join
-    return @known
+    return state
+  end
+
+  # Return the internal "known" state
+  def state
+    return @known.dup
   end
 
 private

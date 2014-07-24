@@ -57,11 +57,16 @@ module Franz
     #
     # @return [Hash] internal "seqs" state
     def stop
-      return @seqs if @stop
+      return state if @stop
       @stop = true
       @t2.kill
       @t1.join
-      return @seqs
+      return state
+    end
+
+    # Return the internal "seqs" state
+    def state
+      return @seqs.dup
     end
 
   private

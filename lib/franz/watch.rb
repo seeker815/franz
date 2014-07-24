@@ -50,10 +50,15 @@ module Franz
     #
     # @return [Hash] internal "stats" state
     def stop
-      return @stats if @stop
+      return state if @stop
       @stop = true
       @thread.join
-      return @stats
+      return state
+    end
+
+    # Return the internal "stats" state
+    def state
+      return @stats.dup
     end
 
   private
