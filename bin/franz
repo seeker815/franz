@@ -65,9 +65,9 @@ begin
   fout.join
 
 rescue SignalException => e
-  logger.fatal e.inspect
+  logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
 rescue SystemExit, Interrupt => e
-  logger.fatal e.inspect
+  logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
 ensure
   fin.stop
   fin.checkpoint

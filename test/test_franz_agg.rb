@@ -39,7 +39,7 @@ class TestFranzAgg < MiniTest::Test
     path = realpath tmp.path
     assert seqs.include?(path)
     assert_equal sample.strip, @agg_events.shift[:message]
-    assert seqs[path] >= 1 # should be one line
+    assert seqs[path] == 1 # should be one line
   end
 
 private

@@ -51,12 +51,16 @@ module Franz
       # stateful inputs to various Franz streaming classes (e.g. the "known" option
       # to Franz::Discover). This state file is generated automatically every time
       # the input exits (see below) and also at regular intervals.
-      last_checkpoint_path = Dir[@checkpoint_glob].sort_by { |path| File.mtime path }.pop
+      checkpoints = Dir[@checkpoint_glob].sort_by { |path| File.mtime path }
+      checkpoints = checkpoints.reject { |path| File.zero? path }
+      last_checkpoint_path = checkpoints.pop
       state = nil
       unless last_checkpoint_path.nil?
         last_checkpoint = File.read(last_checkpoint_path)
         state = Marshal.load last_checkpoint
         log.info 'Loaded %s' % last_checkpoint_path.inspect
+        require 'json'
+        log.fatal JSON::pretty_generate(state)
       end
 
       state = state || {}
@@ -136,8 +140,8 @@ module Franz
       cursors = @tail.state
       seqs    = @agg.state
       stats.keys.each do |path|
-        stats[path][:cursor] = cursors[path] rescue nil
-        stats[path][:seq]    = seqs[path]    rescue nil
+        stats[path][:cursor] = cursors.fetch(path, nil)
+        stats[path][:seq] = seqs.fetch(path, nil)
       end
       return stats
     end
@@ -146,9 +150,7 @@ module Franz
     def checkpoint
       old_checkpoints = Dir[@checkpoint_glob].sort_by { |p| File.mtime p }
       path = @checkpoint_path % Time.now
-      File.open(path, 'w') do |f|
-        f.write Marshal.dump(state)
-      end
+      File.open(path, 'w') { |f| f.write Marshal.dump(state) }
       old_checkpoints.pop # Keep last two checkpoints
       old_checkpoints.map { |c| FileUtils.rm c }
       log.info 'Wrote %s' % path.inspect

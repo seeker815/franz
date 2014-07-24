@@ -107,7 +107,7 @@ module Franz
     def enqueue path, message
       p = real_path path
       t = type path
-      s = seq p
+      s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
       log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
         t.inspect, p.inspect, s.inspect, m.inspect
