@@ -42,7 +42,7 @@ Thread.abort_on_exception = true # Die quickly and with great ceremony
 config = Franz::Config.new opts[:config]
 logger = Franz::Logger.new opts[:debug]
 
-begin
+# begin
   io = Franz::Queue.new # N.B. This is a bounded queue
 
   # Now we'll connect to our output, RabbitMQ. This creates a new thread in the
@@ -64,12 +64,12 @@ begin
   # so we'll have to wait here in main or else we'll just exit.
   fout.join
 
-rescue SignalException => e
-  logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
-rescue SystemExit, Interrupt => e
-  logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
-ensure
-  logger.info 'Bye!'
-  fin.stop
-  fin.checkpoint
-end
+# rescue SignalException => e
+#   logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
+# rescue SystemExit, Interrupt => e
+#   logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
+# ensure
+#   logger.info 'Bye!'
+#   fin.stop
+#   fin.checkpoint
+# end
