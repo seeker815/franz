@@ -75,8 +75,9 @@ module Franz
 
     def watch
       deleted = []
-      stats.each do |path, old_stat|
-        stat = stat_for path
+      stats.keys.each do |path|
+        old_stat    = stats[path]
+        stat        = stat_for path
         stats[path] = stat
 
         if file_created? old_stat, stat

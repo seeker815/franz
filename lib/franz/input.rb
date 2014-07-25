@@ -124,6 +124,7 @@ module Franz
     #
     # @return [Hash] compact internal state
     def stop
+      return state if @stop
       @stop = true
       @t.join
       @watch.stop
