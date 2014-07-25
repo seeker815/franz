@@ -7,17 +7,6 @@ require 'bunny'
 require 'trollop'
 require 'franz'
 
-# If Franz is running, don't start another [INF-4426]
-pid_file = '/var/log/franz/franz.pid'
-if File.exist? pid_file
-  pid = File.read(pid_file).strip.to_i
-  begin
-    Process.getpgid(pid)
-    exit 1 unless pid == Process.pid
-  rescue
-  end
-end
-
 
 # If we find a local config, try to use it
 # N.B. We'll fall back to the last guy listed here
