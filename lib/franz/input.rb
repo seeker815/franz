@@ -72,10 +72,12 @@ module Franz
         stats[path]   = state[path]
       end
 
-      discoveries  = Franz::Queue.new opts[:input][:discover_bound]
-      deletions    = Franz::Queue.new opts[:input][:discover_bound]
-      watch_events = Franz::Queue.new opts[:input][:watch_bound]
-      tail_events  = Franz::Queue.new opts[:input][:tail_bound]
+      log.info 'Starting...'
+
+      discoveries  = Queue.new
+      deletions    = Queue.new
+      watch_events = Queue.new
+      tail_events  = Queue.new
 
       @disover = Franz::Discover.new \
         discoveries: discoveries,
@@ -86,6 +88,8 @@ module Franz
         logger: opts[:logger],
         known: known
 
+      log.info 'Started discover...'
+
       @watch = Franz::Watch.new \
         discoveries: discoveries,
         deletions: deletions,
@@ -94,12 +98,16 @@ module Franz
         logger: opts[:logger],
         stats: stats
 
+      log.info 'Started watch...'
+
       @tail = Franz::Tail.new \
         watch_events: watch_events,
         tail_events: tail_events,
         eviction_interval: opts[:input][:eviction_interval],
         logger: opts[:logger],
         cursors: cursors
+
+      log.info 'Started tail...'
 
       @agg = Franz::Agg.new \
         configs: opts[:input][:configs],
@@ -109,6 +117,8 @@ module Franz
         logger: opts[:logger],
         seqs: seqs
 
+      log.info 'Started agg...'
+
       @stop = false
       @t = Thread.new do
         until @stop
@@ -116,6 +126,8 @@ module Franz
           sleep @checkpoint_interval
         end
       end
+
+      log.info 'Started.'
     end
 
     # Stop everything. Has the effect of draining all the Queues and waiting on

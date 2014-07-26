@@ -81,7 +81,8 @@ module Franz
         configs.each do |config|
           type = config[:type] if config[:includes].any? { |glob|
             included = File.fnmatch? glob, path
-            excluded = config[:excludes].any? { |exlude_glob|
+            excludes = !config[:excludes].nil?
+            excluded = excludes && config[:excludes].any? { |exlude_glob|
               File.fnmatch? exlude_glob, path
             }
             included && !excluded
