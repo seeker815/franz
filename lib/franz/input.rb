@@ -74,10 +74,10 @@ module Franz
 
       log.info 'Starting...'
 
-      discoveries  = Queue.new
-      deletions    = Queue.new
-      watch_events = Queue.new
-      tail_events  = Queue.new
+      discoveries  = ::Queue.new
+      deletions    = ::Queue.new
+      watch_events = ::Queue.new
+      tail_events  = ::Queue.new
 
       @disover = Franz::Discover.new \
         discoveries: discoveries,
