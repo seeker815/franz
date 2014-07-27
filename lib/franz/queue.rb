@@ -61,7 +61,7 @@ module Franz
     # Create a new bounded Queue.
     #
     # @param max_size [Integer] set a bound (or :infinite for no bound)
-    def initialize max_size=4096, options={}
+    def initialize max_size=10_000, options={}
       @items           = []
       @max_size        = max_size
       @lock            = Mutex.new

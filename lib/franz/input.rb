@@ -30,9 +30,9 @@ module Franz
         logger: Logger.new(STDOUT),
         output: nil,
         input: {
-          discover_bound: 4096,
-          watch_bound: 4096,
-          tail_bound: 4096,
+          discover_bound: 10_000,
+          watch_bound: 10_000,
+          tail_bound: 10_000,
           discover_interval: nil,
           watch_interval: nil,
           eviction_interval: nil,
@@ -74,10 +74,10 @@ module Franz
 
       log.info 'Starting...'
 
-      discoveries  = ::Queue.new
-      deletions    = ::Queue.new
-      watch_events = ::Queue.new
-      tail_events  = ::Queue.new
+      discoveries  = Franz::Queue.new opts[:input][:discover_bound]
+      deletions    = Franz::Queue.new opts[:input][:discover_bound]
+      watch_events = Franz::Queue.new opts[:input][:watch_bound]
+      tail_events  = Franz::Queue.new opts[:input][:tail_bound]
 
       @disover = Franz::Discover.new \
         discoveries: discoveries,
