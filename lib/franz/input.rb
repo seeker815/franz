@@ -72,13 +72,14 @@ module Franz
         stats[path]   = state[path]
       end
 
-      log.info 'Starting...'
+      log.info 'starting input...'
 
-      discoveries  = Franz::Queue.new opts[:input][:discover_bound]
-      deletions    = Franz::Queue.new opts[:input][:discover_bound]
-      watch_events = Franz::Queue.new opts[:input][:watch_bound]
-      tail_events  = Franz::Queue.new opts[:input][:tail_bound]
+      discoveries  = ::Queue.new # Franz::Queue.new opts[:input][:discover_bound]
+      deletions    = ::Queue.new # Franz::Queue.new opts[:input][:discover_bound]
+      watch_events = ::Queue.new # Franz::Queue.new opts[:input][:watch_bound]
+      tail_events  = ::Queue.new # Franz::Queue.new opts[:input][:tail_bound]
 
+      log.info 'starting discover...'
       @disover = Franz::Discover.new \
         discoveries: discoveries,
         deletions: deletions,
@@ -88,8 +89,7 @@ module Franz
         logger: opts[:logger],
         known: known
 
-      log.info 'Started discover...'
-
+      log.info 'starting watch...'
       @watch = Franz::Watch.new \
         discoveries: discoveries,
         deletions: deletions,
@@ -98,8 +98,7 @@ module Franz
         logger: opts[:logger],
         stats: stats
 
-      log.info 'Started watch...'
-
+      log.info 'starting tail...'
       @tail = Franz::Tail.new \
         watch_events: watch_events,
         tail_events: tail_events,
@@ -107,8 +106,7 @@ module Franz
         logger: opts[:logger],
         cursors: cursors
 
-      log.info 'Started tail...'
-
+      log.info 'starting agg...'
       @agg = Franz::Agg.new \
         configs: opts[:input][:configs],
         tail_events: tail_events,
@@ -117,17 +115,16 @@ module Franz
         logger: opts[:logger],
         seqs: seqs
 
-      log.info 'Started agg...'
-
       @stop = false
       @t = Thread.new do
+        log.info 'starting checkpoint'
         until @stop
           checkpoint
           sleep @checkpoint_interval
         end
       end
 
-      log.info 'Started.'
+      log.info 'started input'
     end
 
     # Stop everything. Has the effect of draining all the Queues and waiting on
@@ -142,6 +139,7 @@ module Franz
       @watch.stop
       @tail.stop
       @agg.stop
+      log.info 'stopped input'
       return state
     end
 

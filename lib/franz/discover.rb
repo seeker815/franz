@@ -33,6 +33,7 @@ class Franz::Discover
     @stop = false
 
     @thread = Thread.new do
+      log.info 'starting dicover-delete'
       until @stop
         until deletions.empty?
           d = deletions.pop
@@ -47,6 +48,8 @@ class Franz::Discover
         sleep discover_interval
       end
     end
+
+    log.info 'started discover'
   end
 
   # Stop the Discover thread. Effectively only once.
@@ -56,6 +59,7 @@ class Franz::Discover
     return state if @stop
     @stop = true
     @thread.join
+    log.info 'stopped discover'
     return state
   end
 

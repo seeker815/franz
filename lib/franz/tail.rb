@@ -27,6 +27,7 @@ module Franz
       @stop    = false
 
       @evict_thread = Thread.new do
+        log.info 'starting tail-evict'
         until @stop
           evict
           sleep eviction_interval
@@ -36,6 +37,7 @@ module Franz
       end
 
       @watch_thread = Thread.new do
+        log.info 'starting tail-watch'
         until @stop
           e = watch_events.shift
           case e[:name]
@@ -55,6 +57,8 @@ module Franz
           end
         end
       end
+
+      log.info 'started tail'
     end
 
     # Stop the Tail thread. Effectively only once.
@@ -65,6 +69,7 @@ module Franz
       @stop = true
       @watch_thread.kill
       @evict_thread.join
+      log.info 'stopped tail'
       return state
     end
 

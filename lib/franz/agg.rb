@@ -38,6 +38,7 @@ module Franz
       @stop   = false
 
       @t1 = Thread.new do
+        log.info 'starting agg-flush'
         until @stop
           flush
           sleep flush_interval
@@ -47,10 +48,13 @@ module Franz
       end
 
       @t2 = Thread.new do
+        log.info 'starting agg-capture'
         until @stop
           capture
         end
       end
+
+      log.info 'started agg'
     end
 
     # Stop the Agg thread. Effectively only once.
@@ -61,6 +65,7 @@ module Franz
       @stop = true
       @t2.kill
       @t1.join
+      log.info 'stopped agg'
       return state
     end
 

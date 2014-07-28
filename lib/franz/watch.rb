@@ -32,6 +32,7 @@ module Franz
       @stop = false
 
       @thread = Thread.new do
+        log.info 'starting watch-discover'
         until @stop
           until discoveries.empty?
             d = discoveries.pop
@@ -44,6 +45,8 @@ module Franz
           sleep watch_interval
         end
       end
+
+      log.info 'started watch'
     end
 
     # Stop the Watch thread. Effectively only once.
@@ -53,6 +56,7 @@ module Franz
       return state if @stop
       @stop = true
       @thread.join
+      log.info 'stopped watch'
       return state
     end
 
