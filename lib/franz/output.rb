@@ -44,8 +44,10 @@ module Franz
       @thread = Thread.new do
         rand = Random.new
         until @stop
+          event = opts[:input].shift
+          log.trace 'publishing event=%s' % event.inspect
           exchange.publish \
-            JSON::generate(opts[:input].shift),
+            JSON::generate(event),
             routing_key: rand.rand(1_000_000),
             persistent: false
         end

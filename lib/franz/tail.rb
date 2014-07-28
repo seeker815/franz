@@ -27,7 +27,7 @@ module Franz
       @stop    = false
 
       @evict_thread = Thread.new do
-        log.info 'starting tail-evict'
+        log.debug 'starting tail-evict'
         until @stop
           evict
           sleep eviction_interval
@@ -37,7 +37,7 @@ module Franz
       end
 
       @watch_thread = Thread.new do
-        log.info 'starting tail-watch'
+        log.debug 'starting tail-watch'
         until @stop
           e = watch_events.shift
           case e[:name]
@@ -58,7 +58,7 @@ module Franz
         end
       end
 
-      log.info 'started tail'
+      log.debug 'started tail'
     end
 
     # Stop the Tail thread. Effectively only once.
@@ -69,7 +69,7 @@ module Franz
       @stop = true
       @watch_thread.kill
       @evict_thread.join
-      log.info 'stopped tail'
+      log.debug 'stopped tail'
       return state
     end
 
@@ -94,7 +94,7 @@ module Franz
       rescue Errno::ENOENT
         return false
       end
-      log.debug 'opened: path=%s' % path.inspect
+      log.trace 'opened: path=%s' % path.inspect
       return true
     end
 
@@ -112,7 +112,7 @@ module Franz
         begin
           data = file[path].sysread @block_size
           buffer[path].extract(data).each do |line|
-            log.debug 'captured: path=%s line=%s' % [ path, line ]
+            log.trace 'captured: path=%s line=%s' % [ path, line ]
             tail_events.push path: path, line: line
           end
         rescue EOFError, Errno::ENOENT
@@ -121,7 +121,7 @@ module Franz
         @cursors[path] = file[path].pos
       end
 
-      log.debug 'read: path=%s size=%s' % [ path.inspect, size.inspect ]
+      log.trace 'read: path=%s size=%s' % [ path.inspect, size.inspect ]
       @changed[path] = Time.now.to_i
       @reading.delete path
     end
@@ -132,7 +132,7 @@ module Franz
       @cursors.delete(path)
       @changed.delete(path)
       @reading.delete(path)
-      log.debug 'closed: path=%s' % path.inspect
+      log.trace 'closed: path=%s' % path.inspect
     end
 
     def evict
@@ -141,7 +141,7 @@ module Franz
         next unless @changed[path] < Time.now.to_i - eviction_interval
         next unless file.include? path
         file.delete(path).close
-        log.debug 'evicted: path=%s' % path.inspect
+        log.trace 'evicted: path=%s' % path.inspect
       end
     end
   end

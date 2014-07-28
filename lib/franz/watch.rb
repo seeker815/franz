@@ -32,7 +32,7 @@ module Franz
       @stop = false
 
       @thread = Thread.new do
-        log.info 'starting watch-discover'
+        log.debug 'starting watch-discover'
         until @stop
           until discoveries.empty?
             d = discoveries.pop
@@ -46,7 +46,7 @@ module Franz
         end
       end
 
-      log.info 'started watch'
+      log.debug 'started watch'
     end
 
     # Stop the Watch thread. Effectively only once.
@@ -56,7 +56,7 @@ module Franz
       return state if @stop
       @stop = true
       @thread.join
-      log.info 'stopped watch'
+      log.debug 'stopped watch'
       return state
     end
 
@@ -71,7 +71,7 @@ module Franz
     def log ; @logger end
 
     def enqueue name, path, size=nil
-      log.debug 'enqueue: name=%s path=%s size=%s' % [
+      log.trace 'enqueue: name=%s path=%s size=%s' % [
         name.inspect, path.inspect, size.inspect
       ]
       watch_events.push name: name, path: path, size: size

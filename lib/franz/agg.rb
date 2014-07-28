@@ -38,7 +38,7 @@ module Franz
       @stop   = false
 
       @t1 = Thread.new do
-        log.info 'starting agg-flush'
+        log.debug 'starting agg-flush'
         until @stop
           flush
           sleep flush_interval
@@ -48,13 +48,13 @@ module Franz
       end
 
       @t2 = Thread.new do
-        log.info 'starting agg-capture'
+        log.debug 'starting agg-capture'
         until @stop
           capture
         end
       end
 
-      log.info 'started agg'
+      log.debug 'started agg'
     end
 
     # Stop the Agg thread. Effectively only once.
@@ -65,7 +65,7 @@ module Franz
       @stop = true
       @t2.kill
       @t1.join
-      log.info 'stopped agg'
+      log.debug 'stopped agg'
       return state
     end
 
@@ -115,15 +115,15 @@ module Franz
       t = type path
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
-      log.debug 'enqueue type=%s path=%s seq=%d message=%s' % [
+      log.trace 'enqueue type=%s path=%s seq=%d message=%s' % [
         t.inspect, p.inspect, s.inspect, m.inspect
       ]
       agg_events.push path: p, message: m, type: t, host: @@host, '@seq' => s
     end
 
     def capture
-      event     = tail_events.shift
-      log.debug 'received path=%s line=%s' % [
+      event = tail_events.shift
+      log.trace 'received path=%s line=%s' % [
         event[:path], event[:line]
       ]
       multiline = config(event[:path])[:multiline]
@@ -133,10 +133,8 @@ module Franz
         lock.synchronize do
           if event[:line] =~ multiline
             buffered = buffer.flush(event[:path])
-            lines = buffered.map { |e| e[:line] }.join("\n")
-            unless lines.empty?
-              enqueue event[:path], lines
-            end
+            lines    = buffered.map { |e| e[:line] }.join("\n")
+            enqueue event[:path], lines unless lines.empty?
           end
           buffer.insert event[:path], event
         end
@@ -148,12 +146,10 @@ module Franz
         started = Time.now
         buffer.keys.each do |path|
           if started - buffer.mtime(path) >= flush_interval
-            log.debug 'flushing path=%s' % path.inspect
+            log.trace 'flushing path=%s' % path.inspect
             buffered = buffer.remove(path)
-            lines = buffered.map { |e| e[:line] }.join("\n")
-            unless lines.empty?
-              enqueue path, lines
-            end
+            lines    = buffered.map { |e| e[:line] }.join("\n")
+            enqueue path, lines unless lines.empty?
           end
         end
       end
