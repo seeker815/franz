@@ -17,6 +17,7 @@ module Franz
     # @option opts [Hash] :output ({}) "output" configuration
     def initialize opts={}
       opts = {
+        logger: Logger.new(STDOUT),
         input: nil,
         output: {
           exchange: {
@@ -29,6 +30,8 @@ module Franz
           }
         }
       }.deep_merge!(opts)
+
+      @logger = opts[:logger]
 
       rabbit = Bunny.new opts[:output][:connection]
       rabbit.start
@@ -69,5 +72,8 @@ module Franz
       @foreground = true
       @thread.kill
     end
+
+  private
+    def log ; @logger end
   end
 end
