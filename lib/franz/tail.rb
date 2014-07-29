@@ -1,3 +1,4 @@
+require 'thread'
 require 'logger'
 
 require 'buftok'
@@ -16,7 +17,8 @@ module Franz
       @watch_events      = opts[:watch_events]      || []
       @tail_events       = opts[:tail_events]       || []
       @eviction_interval = opts[:eviction_interval] || 5
-      @block_size        = opts[:block_size]        || 5120 # 5 KiB
+      @block_size        = opts[:block_size]        || 32_768 # 32 KiB
+      @spread_size       = opts[:spread_size]       || 98_304 # 96 KiB
       @cursors           = opts[:cursors]           || Hash.new
       @logger            = opts[:logger]            || Logger.new(STDOUT)
 
@@ -36,25 +38,36 @@ module Franz
         evict
       end
 
+      @backlog = Hash.new { |h, k| h[k] = Array.new }
+      @incoming = Hash.new { |h, k| h[k] = ::Queue.new }
+
       @watch_thread = Thread.new do
         log.debug 'starting tail-watch'
         until @stop
           e = watch_events.shift
-          case e[:name]
-          when :created
-          when :replaced
-            close e[:path]
-            read e[:path], e[:size]
-          when :truncated
-            close e[:path]
-            read e[:path], e[:size]
-          when :appended
-            read e[:path], e[:size]
-          when :deleted
-            close e[:path]
-          else
-            raise 'Invalid watch event'
+          @incoming[e[:path]].push e
+        end
+      end
+
+      @tail_thread = Thread.new do
+        until @stop
+          had_event = false
+
+          paths = (@backlog.keys + @incoming.keys).uniq.shuffle
+
+          paths.each do |path|
+            event = @backlog[path].shift
+            begin
+              event = @incoming[path].shift(true)
+            rescue ThreadError
+              next
+            end if event.nil?
+
+            had_event = true
+            handle event
           end
+
+          sleep 0.05 unless had_event
         end
       end
 
@@ -69,6 +82,7 @@ module Franz
       @stop = true
       @watch_thread.kill
       @evict_thread.join
+      @tail_thread.join
       log.debug 'stopped tail'
       return state
     end
@@ -101,12 +115,18 @@ module Franz
     def read path, size
       @reading[path] = true
 
+      bytes_read = 0
       loop do
         begin
           break if file[path].pos >= size
         rescue NoMethodError
           break unless open(path)
           break if file[path].pos >= size
+        end
+
+        if bytes_read >= @spread_size
+          @backlog[path].push name: :appended, path: path, size: size
+          break
         end
 
         begin
@@ -119,7 +139,9 @@ module Franz
           # we're done here
         end
 
+        last_pos = @cursors[path]
         @cursors[path] = file[path].pos
+        bytes_read += @cursors[path] - last_pos
       end
 
       log.trace 'read: path=%s size=%s' % [ path.inspect, size.inspect ]
@@ -141,8 +163,29 @@ module Franz
         next if @reading[path]
         next unless @changed[path] < Time.now.to_i - eviction_interval
         next unless file.include? path
+        next unless @incoming[path].empty?
+        next unless @backlog[path].empty?
         file.delete(path).close
         log.debug 'evicted: path=%s' % path.inspect
+      end
+    end
+
+    def handle event
+      log.trace 'handle: event=%s' % event.inspect
+      case event[:name]
+      when :created
+      when :replaced
+        close event[:path]
+        read event[:path], event[:size]
+      when :truncated
+        close event[:path]
+        read event[:path], event[:size]
+      when :appended
+        read event[:path], event[:size]
+      when :deleted
+        close event[:path]
+      else
+        raise 'invalid event'
       end
     end
   end

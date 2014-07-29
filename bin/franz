@@ -71,7 +71,8 @@ rescue SignalException => e
 rescue SystemExit, Interrupt => e
   logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
 ensure
-  logger.info 'Bye!'
+  logger.info 'Draining. This may take a while...'
   fin.stop
   fin.checkpoint
+  logger.info 'Bye!'
 end
