@@ -5,6 +5,7 @@ require 'deep_merge'
 
 require_relative 'agg'
 require_relative 'tail'
+require_relative 'tail_pool'
 require_relative 'watch'
 require_relative 'discover'
 require_relative 'queue'
@@ -30,6 +31,7 @@ module Franz
         logger: Logger.new(STDOUT),
         output: nil,
         input: {
+          tail_pool_size: 10,
           discover_bound: 10_000,
           watch_bound: 10_000,
           tail_bound: 10_000,
@@ -99,7 +101,8 @@ module Franz
         stats: stats
 
       log.debug 'starting tail...'
-      @tail = Franz::Tail.new \
+      @tail = Franz::TailPool.new \
+        size: opts[:input][:tail_pool_size],
         watch_events: watch_events,
         tail_events: tail_events,
         eviction_interval: opts[:input][:eviction_interval],

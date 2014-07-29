@@ -118,11 +118,12 @@ module Franz
         rescue EOFError, Errno::ENOENT
           # we're done here
         end
+
         @cursors[path] = file[path].pos
+        @changed[path] = Time.now.to_i
       end
 
       log.trace 'read: path=%s size=%s' % [ path.inspect, size.inspect ]
-      @changed[path] = Time.now.to_i
       @reading.delete path
     end
 

@@ -8,8 +8,9 @@ module Franz
   # A powerful, colorful logger for Franz.
   class Logger < Logger
     SEV_LABEL << 'TRACE'
-    TRACE = SEV_LABEL.index('TRACE')
+    TRACE = SEV_LABEL.index('TRACE') # N.B. TRACE is above other levels
 
+    # Send a TRACE-level log line
     def trace progname, &block
       add TRACE, nil, progname, &block if @trace
     end
