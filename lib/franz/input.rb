@@ -76,10 +76,10 @@ module Franz
 
       log.debug 'starting input...'
 
-      discoveries  = ::Queue.new # Franz::Queue.new opts[:input][:discover_bound]
-      deletions    = ::Queue.new # Franz::Queue.new opts[:input][:discover_bound]
-      watch_events = ::Queue.new # Franz::Queue.new opts[:input][:watch_bound]
-      tail_events  = ::Queue.new # Franz::Queue.new opts[:input][:tail_bound]
+      discoveries  = Franz::Queue.new opts[:input][:discover_bound]
+      deletions    = Franz::Queue.new opts[:input][:discover_bound]
+      watch_events = Franz::Queue.new opts[:input][:watch_bound]
+      tail_events  = Franz::Queue.new opts[:input][:tail_bound]
 
       log.debug 'starting discover...'
       @disover = Franz::Discover.new \

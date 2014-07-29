@@ -113,6 +113,13 @@ module Franz
       @max_size <= @items.size
     end
 
+    # Return the list of keys
+    #
+    # @return [Array]
+    def keys
+      return @items.keys
+    end
+
   private
     def wait_for_condition cond, predicate, timeout=:never, timeout_policy=-> { nil }
       deadline = timeout == :never ? :never : Time.now + timeout

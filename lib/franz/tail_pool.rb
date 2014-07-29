@@ -19,7 +19,7 @@ module Franz
 
       @tails  = []
       @ring   = ConsistentHashing::Ring.new
-      @events = Hash.new { |h, k| h[k] = ::Queue.new }
+      @events = Hash.new { |h, k| h[k] = Franz::Queue.new }
 
       @size.times do |i|
         log.debug 'starting tail_pool-tail #%d' %  i

@@ -38,8 +38,8 @@ module Franz
         evict
       end
 
-      @backlog = Hash.new { |h, k| h[k] = Array.new }
-      @incoming = Hash.new { |h, k| h[k] = ::Queue.new }
+      @backlog  = Hash.new { |h, k| h[k] = Array.new }
+      @incoming = Hash.new { |h, k| h[k] = Franz::Queue.new }
 
       @watch_thread = Thread.new do
         log.debug 'starting tail-watch'
@@ -57,12 +57,8 @@ module Franz
 
           paths.each do |path|
             event = @backlog[path].shift
-            begin
-              event = @incoming[path].shift(true)
-            rescue ThreadError
-              next
-            end if event.nil?
-
+            event = @incoming[path].shift(0) if event.nil?
+            next if event.nil?
             had_event = true
             handle event
           end

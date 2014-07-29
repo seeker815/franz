@@ -5,6 +5,7 @@ require 'colorize'
 
 module Franz
 
+  # Extending the Logger with TRACE capabilities
   class ::Logger
     SEV_LABEL << 'TRACE'
     TRACE = SEV_LABEL.index('TRACE') # N.B. TRACE is above other levels
