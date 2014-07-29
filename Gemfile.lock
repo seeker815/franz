@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    franz (1.1.15)
+    franz (1.2.0)
       buftok (~> 0)
       bunny (~> 1)
       colorize (~> 0)

@@ -38,12 +38,12 @@ class Franz::Discover
         until deletions.empty?
           d = deletions.pop
           @known.delete d
-          log.trace 'deleted: %s' % d.inspect
+          log.debug 'deleted: %s' % d.inspect
         end
         discover.each do |discovery|
           discoveries.push discovery
           @known.push discovery
-          log.trace 'discovered: %s' % discovery.inspect
+          log.debug 'discovered: %s' % discovery.inspect
         end
         sleep discover_interval
       end

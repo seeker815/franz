@@ -94,7 +94,7 @@ module Franz
       rescue Errno::ENOENT
         return false
       end
-      log.trace 'opened: path=%s' % path.inspect
+      log.debug 'opened: path=%s' % path.inspect
       return true
     end
 
@@ -120,10 +120,10 @@ module Franz
         end
 
         @cursors[path] = file[path].pos
-        @changed[path] = Time.now.to_i
       end
 
       log.trace 'read: path=%s size=%s' % [ path.inspect, size.inspect ]
+      @changed[path] = Time.now.to_i
       @reading.delete path
     end
 
@@ -133,7 +133,7 @@ module Franz
       @cursors.delete(path)
       @changed.delete(path)
       @reading.delete(path)
-      log.trace 'closed: path=%s' % path.inspect
+      log.debug 'closed: path=%s' % path.inspect
     end
 
     def evict
@@ -142,7 +142,7 @@ module Franz
         next unless @changed[path] < Time.now.to_i - eviction_interval
         next unless file.include? path
         file.delete(path).close
-        log.trace 'evicted: path=%s' % path.inspect
+        log.debug 'evicted: path=%s' % path.inspect
       end
     end
   end

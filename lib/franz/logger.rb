@@ -5,8 +5,7 @@ require 'colorize'
 
 module Franz
 
-  # A powerful, colorful logger for Franz.
-  class Logger < Logger
+  class ::Logger
     SEV_LABEL << 'TRACE'
     TRACE = SEV_LABEL.index('TRACE') # N.B. TRACE is above other levels
 
@@ -14,7 +13,10 @@ module Franz
     def trace progname, &block
       add TRACE, nil, progname, &block if @trace
     end
+  end
 
+  # A powerful, colorful logger for Franz.
+  class Logger < Logger
     # Maps each log level to a unique combination of fore- and background colors
     SEVERITY_COLORS = {
       'DEBUG' => [ :blue,    :default ],
@@ -24,7 +26,6 @@ module Franz
       'FATAL' => [ :red,     :black   ],
       'TRACE' => [ :magenta, :default ]
     }
-
 
     # Create a new, colorful logger.
     #

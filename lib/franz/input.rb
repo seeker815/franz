@@ -101,8 +101,7 @@ module Franz
         stats: stats
 
       log.debug 'starting tail...'
-      @tail = Franz::TailPool.new \
-        size: opts[:input][:tail_pool_size],
+      @tail = Franz::Tail.new \
         watch_events: watch_events,
         tail_events: tail_events,
         eviction_interval: opts[:input][:eviction_interval],
