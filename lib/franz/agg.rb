@@ -94,7 +94,7 @@ module Franz
           }
           return @types[path] = type unless type.nil?
         end
-        raise 'Could not identify type for path=%s' % path
+        log.error 'Could not identify type for path=%s' % path
       end
     end
 
