@@ -19,16 +19,16 @@ module Franz
     #
     # @param [Hash] opts options for the aggregator
     # @option opts [Array<Hash>] :configs ([]) file input configuration
-    # @option opts [Queue] :tail_events (Queue.new) "input" queue from Tail
-    # @option opts [Queue] :agg_events (Queue.new) "output" queue
+    # @option opts [Queue] :tail_events ([]) "input" queue from Tail
+    # @option opts [Queue] :agg_events ([]) "output" queue
     # @option opts [Integer] :flush_interval (5) seconds between flushes
     # @option opts [Hash<Path,Fixnum>] :seqs ({}) internal "seqs" state
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
       @configs        = opts[:configs]        || Array.new
-      @tail_events    = opts[:tail_events]    || Queue.new
-      @agg_events     = opts[:agg_events]     || Queue.new
-      @flush_interval = opts[:flush_interval] || 5
+      @tail_events    = opts[:tail_events]    || []
+      @agg_events     = opts[:agg_events]     || []
+      @flush_interval = opts[:flush_interval] || 10
       @seqs           = opts[:seqs]           || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 

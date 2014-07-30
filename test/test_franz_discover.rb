@@ -44,7 +44,7 @@ class TestFranzDiscover < MiniTest::Test
     start_discovery known: []
     # at this point, we know Discover has already picked up tmp
     delete tmp.path
-    sleep 1
+    sleep 2
     known = stop_discovery
     assert !known.include?(tmp.path)
   end
@@ -66,7 +66,7 @@ private
 
   def start_discovery opts={}
     @discover = Franz::Discover.new({
-      interval: 1,
+      discover_interval: 1,
       discoveries: @discoveries,
       deletions: @deletions,
       logger: @logger,

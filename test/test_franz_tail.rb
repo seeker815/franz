@@ -100,7 +100,7 @@ private
 
   def start_tail opts={}
     @discover = Franz::Discover.new({
-      interval: 1,
+      discover_interval: 1,
       discoveries: @discoveries,
       deletions: @deletions,
       logger: @logger,
@@ -111,7 +111,7 @@ private
     }.deep_merge!(opts))
 
     @watch = Franz::Watch.new({
-      interval: 1,
+      watch_interval: 1,
       watch_events: @watch_events,
       discoveries: @discoveries,
       deletions: @deletions,

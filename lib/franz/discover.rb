@@ -10,8 +10,8 @@ class Franz::Discover
   #
   # @param [Hash] opts options for the discovery
   # @option opts [Array<Hash>] :configs ([]) file input configuration
-  # @option opts [Queue] :discoveries (Queue.new) "output" queue of discovered paths
-  # @option opts [Queue] :deletions (Queue.new) "input" queue of deleted paths
+  # @option opts [Queue] :discoveries ([]) "output" queue of discovered paths
+  # @option opts [Queue] :deletions ([]) "input" queue of deleted paths
   # @option opts [Integer] :discover_interval (5) seconds between discover rounds
   # @option opts [Array<Path>] :known ([]) internal "known" state
   # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
@@ -19,7 +19,7 @@ class Franz::Discover
     @configs           = opts[:configs]           || []
     @discoveries       = opts[:discoveries]       || []
     @deletions         = opts[:deletions]         || []
-    @discover_interval = opts[:discover_interval] || 1
+    @discover_interval = opts[:discover_interval] || 30
     @ignore_before     = opts[:ignore_before]     || 0
     @known             = opts[:known]             || []
     @logger            = opts[:logger]            || Logger.new(STDOUT)

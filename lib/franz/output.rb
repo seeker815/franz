@@ -13,12 +13,12 @@ module Franz
     # and ship events to the configured RabbitMQ cluster.
     #
     # @param [Hash] opts options for the output
-    # @option opts [Queue] :input (Queue.new) "input" queue
+    # @option opts [Queue] :input ([]) "input" queue
     # @option opts [Hash] :output ({}) "output" configuration
     def initialize opts={}
       opts = {
         logger: Logger.new(STDOUT),
-        input: nil,
+        input: [],
         output: {
           exchange: {
             name: 'test',

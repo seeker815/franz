@@ -16,7 +16,7 @@ module Franz
     def initialize opts={}
       @watch_events      = opts[:watch_events]      || []
       @tail_events       = opts[:tail_events]       || []
-      @eviction_interval = opts[:eviction_interval] || 5
+      @eviction_interval = opts[:eviction_interval] || 60
       @block_size        = opts[:block_size]        || 32_768 # 32 KiB
       @spread_size       = opts[:spread_size]       || 98_304 # 96 KiB
       @cursors           = opts[:cursors]           || Hash.new
@@ -39,7 +39,7 @@ module Franz
       end
 
       @backlog  = Hash.new { |h, k| h[k] = Array.new }
-      @incoming = Hash.new { |h, k| h[k] = Franz::Queue.new }
+      @incoming = Hash.new { |h, k| h[k] = SizedQueue.new 10_000 }
 
       @watch_thread = Thread.new do
         log.debug 'starting tail-watch'
@@ -57,8 +57,11 @@ module Franz
 
           paths.each do |path|
             event = @backlog[path].shift
-            event = @incoming[path].shift(0) if event.nil?
-            next if event.nil?
+            begin
+              event = @incoming[path].shift(true)
+            rescue ThreadError
+              next
+            end if event.nil?
             had_event = true
             handle event
           end

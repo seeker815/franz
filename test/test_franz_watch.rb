@@ -118,7 +118,7 @@ private
 
   def start_watch opts={}
     @discover = Franz::Discover.new({
-      interval: 1,
+      discover_interval: 1,
       discoveries: @discoveries,
       deletions: @deletions,
       logger: @logger,
@@ -129,7 +129,7 @@ private
     })
 
     @watch = Franz::Watch.new({
-      interval: 1,
+      watch_interval: 1,
       watch_events: @queue,
       discoveries: @discoveries,
       deletions: @deletions,

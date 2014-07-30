@@ -10,9 +10,9 @@ module Franz
     # Start a new Watch thread in the background.
     #
     # @param [Hash] opts options for the watch
-    # @option opts [Queue] :discoveries (Queue.new) "input" queue of discovered paths
-    # @option opts [Queue] :deletions (Queue.new) "output" queue of deleted paths
-    # @option opts [Queue] :watch_events (Queue.new) "output" queue of file events
+    # @option opts [Queue] :discoveries ([]) "input" queue of discovered paths
+    # @option opts [Queue] :deletions ([]) "output" queue of deleted paths
+    # @option opts [Queue] :watch_events ([]) "output" queue of file events
     # @option opts [Fixnum] :watch_interval (1) seconds between watch rounds
     # @option opts [Hash<Path,State>] :stats ([]) internal "stats" state
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
@@ -20,7 +20,7 @@ module Franz
       @discoveries    = opts[:discoveries]    || []
       @deletions      = opts[:deletions]      || []
       @watch_events   = opts[:watch_events]   || []
-      @watch_interval = opts[:watch_interval] || 1
+      @watch_interval = opts[:watch_interval] || 10
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 

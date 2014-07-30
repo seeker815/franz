@@ -8,7 +8,6 @@ require_relative 'tail'
 require_relative 'tail_pool'
 require_relative 'watch'
 require_relative 'discover'
-require_relative 'queue'
 
 module Franz
 
@@ -20,7 +19,7 @@ module Franz
     #
     # @param [Hash] opts options for the aggregator
     # @option opts [Hash] :input ({}) "input" configuration
-    # @option opts [Queue] :output (Queue.new) "output" queue
+    # @option opts [Queue] :output ([]) "output" queue
     # @option opts [Path] :checkpoint ({}) path to checkpoint file
     # @option opts [Integer] :checkpoint_interval ({}) seconds between checkpoints
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
@@ -29,12 +28,12 @@ module Franz
         checkpoint: 'franz.*.checkpoint',
         checkpoint_interval: 30,
         logger: Logger.new(STDOUT),
-        output: nil,
+        output: [],
         input: {
           tail_pool_size: 10,
           discover_bound: 10_000,
-          watch_bound: 10_000,
-          tail_bound: 10_000,
+          watch_bound: 1_000,
+          tail_bound: 1_000,
           discover_interval: nil,
           watch_interval: nil,
           eviction_interval: nil,
@@ -76,10 +75,10 @@ module Franz
 
       log.debug 'starting input...'
 
-      discoveries  = Franz::Queue.new opts[:input][:discover_bound]
-      deletions    = Franz::Queue.new opts[:input][:discover_bound]
-      watch_events = Franz::Queue.new opts[:input][:watch_bound]
-      tail_events  = Franz::Queue.new opts[:input][:tail_bound]
+      discoveries  = SizedQueue.new opts[:input][:discover_bound]
+      deletions    = SizedQueue.new opts[:input][:discover_bound]
+      watch_events = SizedQueue.new opts[:input][:watch_bound]
+      tail_events  = SizedQueue.new opts[:input][:tail_bound]
 
       log.debug 'starting discover...'
       @disover = Franz::Discover.new \
