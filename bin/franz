@@ -54,7 +54,8 @@ begin
   fout = Franz::Output.new \
     input: io,
     output: config[:output][:rabbitmq],
-    logger: logger
+    logger: logger,
+    tags: config[:output][:tags]
 
   # Franz has only one kind of input, plain text files.
   fin = Franz::Input.new \

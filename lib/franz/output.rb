@@ -18,6 +18,7 @@ module Franz
     def initialize opts={}
       opts = {
         logger: Logger.new(STDOUT),
+        tags: [],
         input: [],
         output: {
           exchange: {
@@ -48,6 +49,7 @@ module Franz
         rand = Random.new
         until @stop
           event = opts[:input].shift
+          event[:tags] = opts[:tags] unless opts[:tags].empty?
           log.trace 'publishing event=%s' % event.inspect
           exchange.publish \
             JSON::generate(event),
