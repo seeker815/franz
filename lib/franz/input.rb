@@ -30,6 +30,7 @@ module Franz
         logger: Logger.new(STDOUT),
         output: [],
         input: {
+          ignore_before: 0,
           tail_pool_size: 10,
           discover_bound: 10_000,
           watch_bound: 1_000,

@@ -77,8 +77,10 @@ private
     discovered = []
     configs.each do |config|
       config[:includes].each do |glob|
-        Dir[glob].each do |path|
-          next if config[:excludes].any? { |exclude| File.fnmatch? exclude, path }
+        expand(glob).each do |path|
+          next if config[:excludes].any? { |exclude|
+            File.fnmatch? exclude, File::basename(path)
+          }
           next if known.include? path
           next unless File.file? path
           next if File.mtime(path).to_i <= @ignore_before
@@ -87,5 +89,20 @@ private
       end
     end
     return discovered
+  end
+
+  def expand glob
+    dir_glob = File.dirname(glob)
+    file_glob = File.basename(glob)
+    files = []
+    Dir.glob(dir_glob).each do |dir|
+      next unless File::directory?(dir)
+      Dir.foreach(dir) do |fname|
+        next if fname == '.' || fname == '..'
+        next unless File.fnmatch?(file_glob, fname)
+        files << File.join(dir, fname)
+      end
+    end
+    files
   end
 end

@@ -87,8 +87,8 @@ module Franz
           type = config[:type] if config[:includes].any? { |glob|
             included = File.fnmatch? glob, path
             excludes = !config[:excludes].nil?
-            excluded = excludes && config[:excludes].any? { |exlude_glob|
-              File.fnmatch? exlude_glob, path
+            excluded = excludes && config[:excludes].any? { |exlude|
+              File.fnmatch? exlude, File::basename(path)
             }
             included && !excluded
           }
