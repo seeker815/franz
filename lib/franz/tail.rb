@@ -14,13 +14,18 @@ module Franz
     #
     # @param opts [Hash] a complex Hash for tail configuration
     def initialize opts={}
-      @watch_events      = opts[:watch_events]      || []
-      @tail_events       = opts[:tail_events]       || []
+      @watch_events = opts[:watch_events] || []
+      @tail_events  = opts[:tail_events]  || []
+
       @eviction_interval = opts[:eviction_interval] || 60
       @block_size        = opts[:block_size]        || 32_768 # 32 KiB
       @spread_size       = opts[:spread_size]       || 98_304 # 96 KiB
       @cursors           = opts[:cursors]           || Hash.new
       @logger            = opts[:logger]            || Logger.new(STDOUT)
+
+      log.debug 'tail: watch_events=%s tail_events=%s' % [
+        @watch_events, @tail_events
+      ]
 
       @buffer  = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
       @file    = Hash.new
@@ -29,44 +34,21 @@ module Franz
       @stop    = false
 
       @evict_thread = Thread.new do
-        log.debug 'starting tail-evict'
         until @stop
           evict
           sleep eviction_interval
         end
-        sleep eviction_interval
-        evict
-      end
-
-      @backlog  = Hash.new { |h, k| h[k] = Array.new }
-      @incoming = Hash.new { |h, k| h[k] = SizedQueue.new 10_000 }
-
-      @watch_thread = Thread.new do
-        log.debug 'starting tail-watch'
-        until @stop
-          e = watch_events.shift
-          @incoming[e[:path]].push e
-        end
+        evict true
       end
 
       @tail_thread = Thread.new do
         until @stop
-          had_event = false
-
-          paths = (@backlog.keys + @incoming.keys).uniq.shuffle
-
-          paths.each do |path|
-            event = @backlog[path].shift
-            begin
-              event = @incoming[path].shift(true)
-            rescue ThreadError
-              next
-            end if event.nil?
-            had_event = true
-            handle event
+          if @file.size >= OPEN_FILE_LIMIT
+            log.debug 'Sleeping until file descriptors become available...'
+            sleep 5
+          else
+            handle(watch_events.shift)
           end
-
-          sleep 0.05 unless had_event
         end
       end
 
@@ -79,9 +61,9 @@ module Franz
     def stop
       return state if @stop
       @stop = true
-      @watch_thread.kill
-      @evict_thread.join
-      @tail_thread.join
+      @watch_thread.kill rescue nil
+      @evict_thread.kill rescue nil
+      @tail_thread.kill  rescue nil
       log.debug 'stopped tail'
       return state
     end
@@ -97,6 +79,11 @@ module Franz
     def log ; @logger end
 
     def open path
+      if file.size > OPEN_FILE_LIMIT
+        log.fatal 'Absolutely too many open files!'
+        raise Errno::EMFILE
+      end
+
       return true unless file[path].nil?
       pos = @cursors.include?(path) ? @cursors[path] : 0
       begin
@@ -104,10 +91,14 @@ module Franz
         file[path].sysseek pos, IO::SEEK_SET
         @cursors[path] = pos
         @changed[path] = Time.now.to_i
+      rescue Errno::EMFILE
+        log.debug 'skipping: path=%s (too many open files)' % path.inspect
+        return false
       rescue Errno::ENOENT
+        log.debug 'skipping: path=%s (file does not exist)' % path.inspect
         return false
       end
-      log.debug 'opened: path=%s' % path.inspect
+      log.trace 'opened: path=%s' % path.inspect
       return true
     end
 
@@ -121,11 +112,6 @@ module Franz
         rescue NoMethodError
           break unless open(path)
           break if file[path].pos >= size
-        end
-
-        if bytes_read >= @spread_size
-          @backlog[path].push name: :appended, path: path, size: size
-          break
         end
 
         begin
@@ -143,7 +129,10 @@ module Franz
         bytes_read += @cursors[path] - last_pos
       end
 
-      log.trace 'read: path=%s size=%s' % [ path.inspect, size.inspect ]
+      log.trace 'read: path=%s size=%s cursor=%s' % [
+        path.inspect, size.inspect, @cursors[path].inspect
+      ]
+
       @changed[path] = Time.now.to_i
       @reading.delete path
     end
@@ -157,13 +146,14 @@ module Franz
       log.debug 'closed: path=%s' % path.inspect
     end
 
-    def evict
+    def evict force=false
+      cutoff = Time.now.to_i - eviction_interval
       file.keys.each do |path|
-        next if @reading[path]
-        next unless @changed[path] < Time.now.to_i - eviction_interval
-        next unless file.include? path
-        next unless @incoming[path].empty?
-        next unless @backlog[path].empty?
+        unless force
+          next if @reading[path]
+          next unless @changed[path] < cutoff
+          next unless file.include? path
+        end
         file.delete(path).close
         log.debug 'evicted: path=%s' % path.inspect
       end

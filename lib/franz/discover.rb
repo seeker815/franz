@@ -16,9 +16,10 @@ class Franz::Discover
   # @option opts [Array<Path>] :known ([]) internal "known" state
   # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
   def initialize opts={}
-    @configs           = opts[:configs]           || []
-    @discoveries       = opts[:discoveries]       || []
-    @deletions         = opts[:deletions]         || []
+    @configs     = opts[:configs]     || []
+    @discoveries = opts[:discoveries] || []
+    @deletions   = opts[:deletions]   || []
+
     @discover_interval = opts[:discover_interval] || 30
     @ignore_before     = opts[:ignore_before]     || 0
     @known             = opts[:known]             || []
@@ -32,8 +33,11 @@ class Franz::Discover
 
     @stop = false
 
+    log.debug 'discover: configs=%s discoveries=%s deletions=%s' % [
+      @configs, @discoveries, @deletions
+    ]
+
     @thread = Thread.new do
-      log.debug 'starting dicover-delete'
       until @stop
         until deletions.empty?
           d = deletions.pop
@@ -58,7 +62,7 @@ class Franz::Discover
   def stop
     return state if @stop
     @stop = true
-    @thread.join
+    @thread.kill
     log.debug 'stopped discover'
     return state
   end
@@ -92,17 +96,18 @@ private
   end
 
   def expand glob
-    dir_glob = File.dirname(glob)
-    file_glob = File.basename(glob)
-    files = []
-    Dir.glob(dir_glob).each do |dir|
-      next unless File::directory?(dir)
-      Dir.foreach(dir) do |fname|
-        next if fname == '.' || fname == '..'
-        next unless File.fnmatch?(file_glob, fname)
-        files << File.join(dir, fname)
-      end
-    end
-    files
+    Dir[glob]
+    # dir_glob = File.dirname(glob)
+    # file_glob = File.basename(glob)
+    # files = []
+    # Dir.glob(dir_glob).each do |dir|
+    #   next unless File::directory?(dir)
+    #   Dir.foreach(dir) do |fname|
+    #     next if fname == '.' || fname == '..'
+    #     next unless File.fnmatch?(file_glob, fname)
+    #     files << File.join(dir, fname)
+    #   end
+    # end
+    # files
   end
 end

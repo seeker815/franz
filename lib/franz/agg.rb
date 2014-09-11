@@ -25,9 +25,10 @@ module Franz
     # @option opts [Hash<Path,Fixnum>] :seqs ({}) internal "seqs" state
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
-      @configs        = opts[:configs]        || Array.new
-      @tail_events    = opts[:tail_events]    || []
-      @agg_events     = opts[:agg_events]     || []
+      @configs     = opts[:configs]     || []
+      @tail_events = opts[:tail_events] || []
+      @agg_events  = opts[:agg_events]  || []
+
       @flush_interval = opts[:flush_interval] || 10
       @seqs           = opts[:seqs]           || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
@@ -37,21 +38,20 @@ module Franz
       @buffer = Franz::Sash.new
       @stop   = false
 
+      log.debug 'agg: configs=%s tail_events=%s agg_events=%s' % [
+        @configs, @tail_events, @agg_events
+      ]
+
       @t1 = Thread.new do
-        log.debug 'starting agg-flush'
         until @stop
           flush
           sleep flush_interval
         end
-        sleep flush_interval
-        flush
+        flush true
       end
 
       @t2 = Thread.new do
-        log.debug 'starting agg-capture'
-        until @stop
-          capture
-        end
+        capture until @stop
       end
 
       log.debug 'started agg'
@@ -141,11 +141,11 @@ module Franz
       end
     end
 
-    def flush
+    def flush force=false
       lock.synchronize do
         started = Time.now
         buffer.keys.each do |path|
-          if started - buffer.mtime(path) >= flush_interval
+          if started - buffer.mtime(path) >= flush_interval || force
             log.trace 'flushing path=%s' % path.inspect
             buffered = buffer.remove(path)
             lines    = buffered.map { |e| e[:line] }.join("\n")

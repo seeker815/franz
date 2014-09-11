@@ -33,32 +33,49 @@ module Franz
     # @param debug [Boolean] enable DEBUG level logs
     # @param out [File] output destination for logs
     def initialize debug=false, trace=false, out=nil
+      colorize = out.nil?
       out ||= $stdout
       super out
-      colorize
+      format colorize
       @trace = true if trace
       self.level = ::Logger::INFO
       self.level = ::Logger::DEBUG if debug
     end
 
   private
-    def colorize
+    def format colorize
+      short_format = "%s\n"
+      long_format  = "%s [%s] %s -- %s\n"
+
       self.formatter = proc do |severity, datetime, _, message|
-        if level == 1
-          message.to_s.colorize(
-            color: SEVERITY_COLORS[severity.to_s][0],
-            background: SEVERITY_COLORS[severity.to_s][1]
-          ) + "\n"
-        else
-          "%s [%s] %s -- %s\n".colorize(
-            color: SEVERITY_COLORS[severity.to_s][0],
-            background: SEVERITY_COLORS[severity.to_s][1]
-          ) % [
-            severity,
-            datetime.iso8601(6),
-            File::basename(caller[4]),
-            message
-          ]
+        if colorize
+          if level == 1
+            short_format.colorize(
+              color: SEVERITY_COLORS[severity.to_s][0],
+              background: SEVERITY_COLORS[severity.to_s][1]
+            ) % message
+          else
+            long_format.colorize(
+              color: SEVERITY_COLORS[severity.to_s][0],
+              background: SEVERITY_COLORS[severity.to_s][1]
+            ) % [
+              severity,
+              datetime.iso8601(6),
+              File::basename(caller[4]),
+              message
+            ]
+          end
+        else # plain
+          if level == 1
+            short_format % message
+          else
+            long_format % [
+              severity,
+              datetime.iso8601(6),
+              File::basename(caller[4]),
+              message
+            ]
+          end
         end
       end
     end

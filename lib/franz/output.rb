@@ -34,7 +34,11 @@ module Franz
 
       @logger = opts[:logger]
 
-      rabbit = Bunny.new opts[:output][:connection]
+      rabbit = Bunny.new opts[:output][:connection].merge \
+        automatically_recover: true,
+        threaded: true,
+        heartbeat: 90
+
       rabbit.start
 
       channel  = rabbit.create_channel

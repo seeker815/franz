@@ -5,7 +5,6 @@ require 'deep_merge'
 
 require_relative 'agg'
 require_relative 'tail'
-require_relative 'tail_pool'
 require_relative 'watch'
 require_relative 'discover'
 
@@ -31,7 +30,6 @@ module Franz
         output: [],
         input: {
           ignore_before: 0,
-          tail_pool_size: 10,
           discover_bound: 10_000,
           watch_bound: 1_000,
           tail_bound: 1_000,
@@ -48,6 +46,8 @@ module Franz
       @checkpoint_interval = opts[:checkpoint_interval]
       @checkpoint_path     = opts[:checkpoint].sub('*', '%d')
       @checkpoint_glob     = opts[:checkpoint]
+
+      log.debug 'input: opts=%s' % JSON::pretty_generate(opts)
 
       # The checkpoint contains a Marshalled Hash with a compact representation of
       # stateful inputs to various Franz streaming classes (e.g. the "known" option
@@ -162,10 +162,14 @@ module Franz
     def checkpoint
       old_checkpoints = Dir[@checkpoint_glob].sort_by { |p| File.mtime p }
       path = @checkpoint_path % Time.now
-      File.open(path, 'w') { |f| f.write Marshal.dump(state) }
-      old_checkpoints.pop # Keep last two checkpoints
-      old_checkpoints.map { |c| FileUtils.rm c }
-      log.info 'Wrote %s' % path.inspect
+      begin
+        File.open(path, 'w') { |f| f.write Marshal.dump(state) }
+        old_checkpoints.pop # Keep last two checkpoints
+        old_checkpoints.map { |c| FileUtils.rm c }
+        log.info 'Wrote %s' % path.inspect
+      rescue Errno::EMFILE
+        log.warn 'Could not write checkpoint (too many open files)'
+      end
     end
 
   private
