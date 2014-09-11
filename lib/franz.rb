@@ -1,4 +1,4 @@
-open_file_limit = `ulimit -n`.strip.to_i - 256
+open_file_limit = Process.getrlimit(:NOFILE).first
 OPEN_FILE_LIMIT = open_file_limit <= 0 ? 256 : open_file_limit
 
 require_relative 'franz/agg'
