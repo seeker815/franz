@@ -46,7 +46,7 @@ logger = Franz::Logger.new opts[:debug], opts[:trace], opts[:log]
 
 io_bound = config[:output][:bound] || 10_000
 
-begin
+# begin
   io = SizedQueue.new io_bound
 
   # Now we'll connect to our output, RabbitMQ. This creates a new thread in the
@@ -69,13 +69,13 @@ begin
   # so we'll have to wait here in main or else we'll just exit.
   fout.join
 
-rescue SignalException => e
-  logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
-rescue SystemExit, Interrupt => e
-  logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
-ensure
-  logger.info 'Draining. This may take a while...'
-  fin.stop
-  fin.checkpoint
-  logger.info 'Bye!'
-end
+# rescue SignalException => e
+#   logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
+# rescue SystemExit, Interrupt => e
+#   logger.fatal "#{e.inspect} #{$!}\n\t#{$@ * "\n\t"}"
+# ensure
+#   logger.info 'Draining. This may take a while...'
+#   fin.stop
+#   fin.checkpoint
+#   logger.info 'Bye!'
+# end

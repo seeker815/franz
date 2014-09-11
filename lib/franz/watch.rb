@@ -17,9 +17,10 @@ module Franz
     # @option opts [Hash<Path,State>] :stats ([]) internal "stats" state
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
-      @discoveries    = opts[:discoveries]    || []
-      @deletions      = opts[:deletions]      || []
-      @watch_events   = opts[:watch_events]   || []
+      @discoveries  = opts[:discoveries]  || []
+      @deletions    = opts[:deletions]    || []
+      @watch_events = opts[:watch_events] || []
+
       @watch_interval = opts[:watch_interval] || 10
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
@@ -31,12 +32,14 @@ module Franz
 
       @stop = false
 
+      log.debug 'watch: discoveries=%s deletions=%s watch_events=%s' % [
+        @discoveries, @deletions, @watch_events
+      ]
+
       @thread = Thread.new do
-        log.debug 'starting watch-discover'
         until @stop
           until discoveries.empty?
-            d = discoveries.pop
-            @stats[d] = nil
+            @stats[discoveries.shift] = nil
           end
           watch.each do |deleted|
             @stats.delete deleted
@@ -55,7 +58,7 @@ module Franz
     def stop
       return state if @stop
       @stop = true
-      @thread.join
+      @thread.kill
       log.debug 'stopped watch'
       return state
     end
