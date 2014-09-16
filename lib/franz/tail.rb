@@ -18,7 +18,7 @@ module Franz
       @tail_events  = opts[:tail_events]  || []
 
       @block_size  = opts[:block_size]  || 32_768 # 32 KiB
-      @spread_size = opts[:spread_size] || 98_304 # 96 KiB
+      @spread_size = opts[:spread_size] || (2*@block_size)
       @cursors     = opts[:cursors]     || Hash.new { |h,k| h[k] = 0 }
       @logger      = opts[:logger]      || Logger.new(STDOUT)
 
