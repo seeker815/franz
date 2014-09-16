@@ -27,7 +27,7 @@ class TestPerformance < MiniTest::Test
     @tail_events  = Queue.new
     @agg_events   = Queue.new
     @logger       = Logger.new STDERR
-    @logger.level = Logger::DEBUG
+    @logger.level = Logger::WARN
 
     FileUtils.rm_rf @tmpdir
     FileUtils.mkdir_p @tmpdir
@@ -61,8 +61,7 @@ class TestPerformance < MiniTest::Test
     seqs = stop_agg
     elapsed = Time.now - started
 
-    @logger.fatal('%ds elapsed' % elapsed)
-
+    @logger.debug('%ds elapsed' % elapsed)
     assert_equal(paths.size, seqs.keys.size)
     assert_equal(paths.size * num_lines_per_file, @agg_events.size)
   end
