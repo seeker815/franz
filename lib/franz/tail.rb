@@ -61,9 +61,11 @@ module Franz
     def log ; @logger end
 
     def read path, size
+      @cursors[path] ||= 0
       started = Time.now
       pos = @cursors[path]
 
+      raise if size.nil?
       loop do
         break if @cursors[path] >= size
 
