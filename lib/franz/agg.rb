@@ -95,11 +95,13 @@ module Franz
           return @types[path] = type unless type.nil?
         end
         log.error 'Could not identify type for path=%s' % path
+        @types[path] = nil
       end
     end
 
     def config path
-      configs.select { |c| c[:type] == type(path) }.shift
+      t = type(path)
+      configs.select { |c| c[:type] == t }.shift
     end
 
     def seq path
@@ -113,6 +115,7 @@ module Franz
     def enqueue path, message
       p = real_path path
       t = type path
+      return if t.nil?
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
       log.trace 'enqueue type=%s path=%s seq=%d message=%s' % [
@@ -126,7 +129,7 @@ module Franz
       log.trace 'received path=%s line=%s' % [
         event[:path], event[:line]
       ]
-      multiline = config(event[:path])[:multiline]
+      multiline = config(event[:path])[:multiline] rescue nil
       if multiline.nil?
         enqueue event[:path], event[:line] unless event[:line].empty?
       else

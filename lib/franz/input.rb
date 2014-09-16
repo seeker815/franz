@@ -63,6 +63,8 @@ module Franz
         log.debug 'Loaded %s' % last_checkpoint_path.inspect
       end
 
+      full_state = state.dup
+
       state = state || {}
       known = state.keys
       stats, cursors, seqs = {}, {}, {}
@@ -89,7 +91,8 @@ module Franz
         discover_interval: opts[:input][:discover_interval],
         ignore_before: opts[:input][:ignore_before],
         logger: opts[:logger],
-        known: known
+        known: known,
+        full_state: full_state
 
       log.debug 'starting tail...'
       @tail = Franz::Tail.new \
@@ -97,7 +100,8 @@ module Franz
         tail_events: tail_events,
         eviction_interval: opts[:input][:eviction_interval],
         logger: opts[:logger],
-        cursors: cursors
+        cursors: cursors,
+        full_state: full_state
 
       log.debug 'starting agg...'
       @agg = Franz::Agg.new \
@@ -106,7 +110,8 @@ module Franz
         agg_events: opts[:output],
         flush_interval: opts[:input][:flush_interval],
         logger: opts[:logger],
-        seqs: seqs
+        seqs: seqs,
+        full_state: full_state
 
       log.debug 'starting watch...'
       @watch = Franz::Watch.new \
@@ -115,7 +120,8 @@ module Franz
         watch_events: watch_events,
         watch_interval: opts[:input][:watch_interval],
         logger: opts[:logger],
-        stats: stats
+        stats: stats,
+        full_state: full_state
 
       @stop = false
       @t = Thread.new do

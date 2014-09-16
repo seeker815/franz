@@ -25,10 +25,27 @@ module Franz
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 
-      # # Need to resend old events to make sure Tail catches up
-      # stats.each do |path, old_stat|
-      #   watch_events.push name: :appended, path: path, size: old_stat[:size]
-      # end
+      # Make sure we're up-to-date
+      stats.keys.each do |path|
+        begin
+          stat   = File.stat(path)
+          size   = stat.size
+          cursor = opts[:full_state][path][:cursor]
+          if cursor.nil?
+            # nop
+          elsif size < cursor
+            enqueue name: :truncated, path: path, size: size
+          elsif size > cursor
+            enqueue name: :appended, path: path, size: size
+          end
+        rescue KeyError
+          log.error 'Erm, shouldna got here'
+        rescue Errno::ENOENT
+          @stats.delete(path)
+          enqueue :deleted, path
+          deleted << path
+        end
+      end
 
       @stop = false
 
