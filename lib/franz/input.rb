@@ -63,7 +63,7 @@ module Franz
         log.debug 'Loaded %s' % last_checkpoint_path.inspect
       end
 
-      full_state = state.dup
+      full_state = state.nil? ? nil : state.dup
 
       state = state || {}
       known = state.keys

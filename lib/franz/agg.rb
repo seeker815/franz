@@ -34,7 +34,7 @@ module Franz
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 
       @types  = Hash.new
-      @lock   = Mutex.new
+      @lock   = Hash.new { |h,k| h[k] = Mutex.new }
       @buffer = Franz::Sash.new
       @stop   = false
 
@@ -113,6 +113,7 @@ module Franz
     end
 
     def enqueue path, message
+      started = Time.now
       p = real_path path
       t = type path
       return if t.nil?
@@ -122,6 +123,8 @@ module Franz
         t.inspect, p.inspect, s.inspect, m.inspect
       ]
       agg_events.push path: p, message: m, type: t, host: @@host, '@seq' => s
+      elapsed = Time.now - started
+      log.debug 'enqueued elapsed=%fs' % elapsed
     end
 
     def capture
@@ -133,7 +136,7 @@ module Franz
       if multiline.nil?
         enqueue event[:path], event[:line] unless event[:line].empty?
       else
-        lock.synchronize do
+        lock[event[:path]].synchronize do
           if event[:line] =~ multiline
             buffered = buffer.flush(event[:path])
             lines    = buffered.map { |e| e[:line] }.join("\n")
@@ -145,9 +148,9 @@ module Franz
     end
 
     def flush force=false
-      lock.synchronize do
-        started = Time.now
-        buffer.keys.each do |path|
+      started = Time.now
+      buffer.keys.each do |path|
+        lock[path].synchronize do
           if started - buffer.mtime(path) >= flush_interval || force
             log.trace 'flushing path=%s' % path.inspect
             buffered = buffer.remove(path)
@@ -156,6 +159,8 @@ module Franz
           end
         end
       end
+      elapsed = Time.now - started
+      log.debug 'flushed elapsed=%fs' % elapsed
     end
   end
 end
