@@ -53,11 +53,24 @@ module Franz
         rand = Random.new
         until @stop
           event = opts[:input].shift
-          event[:tags] = opts[:tags] unless opts[:tags].empty?
+          # event[:tags] = opts[:tags] unless opts[:tags].empty?
+          event.delete(:tags)
+          event[:path] = event[:path].sub('/home/denimuser/seam-builds/rel', '')
+          event[:path] = event[:path].sub('/home/denimuser/seam-builds/live', '')
+          event[:path] = event[:path].sub('/home/denimuser/seam-builds/beta', '')
+          event[:path] = event[:path].sub('/home/denimuser/builds/rel', '')
+          event[:path] = event[:path].sub('/home/denimuser/builds/live', '')
+          event[:path] = event[:path].sub('/home/denimuser/builds/beta', '')
+          event[:path] = event[:path].sub('/home/denimuser/cobalt-builds/rel', '')
+          event[:path] = event[:path].sub('/home/denimuser/cobalt-builds/live', '')
+          event[:path] = event[:path].sub('/home/denimuser/cobalt-builds/beta', '')
+          event[:path] = event[:path].sub('/home/denimuser/rivet-builds', '')
+          event[:path] = event[:path].sub('/home/denimuser', '')
+          event[:path] = event[:path].sub('/var/log', '')
           log.trace 'publishing event=%s' % event.inspect
           exchange.publish \
             JSON::generate(event),
-            routing_key: rand.rand(1_000_000),
+            routing_key: rand.rand(10_000),
             persistent: false
         end
       end
