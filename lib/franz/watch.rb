@@ -25,10 +25,10 @@ module Franz
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 
-      # Need to resend old events to make sure Tail catches up
-      stats.each do |path, old_stat|
-        watch_events.push name: :appended, path: path, size: old_stat[:size]
-      end
+      # # Need to resend old events to make sure Tail catches up
+      # stats.each do |path, old_stat|
+      #   watch_events.push name: :appended, path: path, size: old_stat[:size]
+      # end
 
       @stop = false
 

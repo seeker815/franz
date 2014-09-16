@@ -103,10 +103,6 @@ module Franz
     end
 
     def read path, size
-      if size.nil?
-        log.debug 'Erm, size is nil?'
-        return
-      end
       @reading[path] = true
 
       bytes_read = 0
