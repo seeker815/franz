@@ -124,7 +124,7 @@ module Franz
       agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
       elapsed1 = Time.now - started
 
-      log.debug 'enqueued elapsed1=%fs elapsed2=%fs elapsed3' % [
+      log.debug 'enqueued elapsed1=%fs elapsed2=%fs elapsed3=%fs' % [
         elapsed1, elapsed2, elapsed3
       ]
     end
