@@ -18,7 +18,6 @@ module Franz
       @tail_events  = opts[:tail_events]  || []
 
       @block_size  = opts[:block_size]  || 32_768 # 32 KiB
-      @spread_size = opts[:spread_size] || (2*@block_size)
       @cursors     = opts[:cursors]     || Hash.new { |h,k| h[k] = 0 }
       @logger      = opts[:logger]      || Logger.new(STDOUT)
 
@@ -32,10 +31,12 @@ module Franz
       @tail_thread = Thread.new do
         until @stop
           started = Time.now
-          handle(watch_events.shift)
-          elapsed = Time.now - started
-          log.fatal 'tail ended: elapsed=%fs (watch_events.size=%d tail_events.size=%d)' % [
-            elapsed, watch_events.size, tail_events.size
+          e = watch_events.shift
+          elapsed2 = Time.now - started
+          handle(e)
+          elapsed1 = Time.now - started
+          log.fatal 'tail ended: elapsed1=%fs elapsed2=%fs (watch_events.size=%d tail_events.size=%d)' % [
+            elapsed1, elapsed2, watch_events.size, tail_events.size
           ]
         end
       end
@@ -78,8 +79,10 @@ module Franz
           data = IO::read path, @block_size, @cursors[path]
           @cursors[path] += data.bytesize
           buffer[path].extract(data).each do |line|
-            log.trace 'captured: path=%s line=%s' % [ path, line ]
             tail_events.push path: path, line: line
+            log.trace 'captured: path=%s line=%s cursor=%d' % [
+              path, line, @cursors[path]
+            ]
           end
         rescue EOFError, Errno::ENOENT
           # we're done here
@@ -88,7 +91,7 @@ module Franz
 
       diff = @cursors[path] - pos
       elapsed = Time.now - started
-      log.trace 'read: path=%s size=%s cursor=%s (diff=%d) [elapsed=%0.2fs]' % [
+      log.fatal 'read: path=%s size=%s cursor=%s (diff=%d) [elapsed=%0.2fs]' % [
         path.inspect, size.inspect, @cursors[path].inspect, diff, elapsed
       ]
     end
