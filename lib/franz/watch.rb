@@ -81,7 +81,7 @@ module Franz
           end
           elapsed1 = Time.now - started
 
-          log.debug \
+          log.trace \
             event: 'watch finished',
             elapsed: elapsed1,
             elapsed_discovering: elapsed2,

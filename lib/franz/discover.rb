@@ -54,7 +54,7 @@ class Franz::Discover
             path: discovery
         end
         elapsed = Time.now - started
-        log.debug \
+        log.trace \
           event: 'discover finished',
           elapsed: elapsed,
           known_size_before: known_size,

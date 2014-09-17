@@ -84,7 +84,7 @@ module Franz
           elapsed1 = Time.now - started
 
           n += 1
-          log.debug \
+          log.trace \
             event: 'output finished',
             elapsed: elapsed1,
             elapsed_waiting_on_agg: elapsed3,

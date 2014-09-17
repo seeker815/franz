@@ -54,7 +54,7 @@ module Franz
           started = Time.now
           capture
           elapsed = Time.now - started
-          log.debug \
+          log.trace \
             event: 'agg finished',
             elapsed: elapsed,
             tail_events_size_before: tail_events_size,
@@ -182,7 +182,7 @@ module Franz
         end
       end
       elapsed = Time.now - started
-      log.debug \
+      log.trace \
         event: 'agg flush finished',
         elasped: elapsed,
         tail_events_size_before: tail_events_size,

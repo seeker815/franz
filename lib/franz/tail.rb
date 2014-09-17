@@ -35,7 +35,7 @@ module Franz
           handle(e)
           elapsed1 = Time.now - started
 
-          log.debug \
+          log.trace \
             event: 'tail finished',
             elapsed: elapsed1,
             elapsed_waiting_on_watch: elapsed2,
@@ -116,7 +116,7 @@ module Franz
 
       diff = @cursors[path] - start_pos
       elapsed = Time.now - started
-      log.debug \
+      log.trace \
         event: 'tail read finished',
         path: path,
         size: size,
