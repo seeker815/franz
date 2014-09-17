@@ -39,6 +39,7 @@ class Franz::Discover
 
     @thread = Thread.new do
       until @stop
+        started = Time.now
         until deletions.empty?
           d = deletions.pop
           @known.delete d
@@ -49,11 +50,13 @@ class Franz::Discover
           @known.push discovery
           log.debug 'discovered: %s' % discovery.inspect
         end
+        elapsed = Time.now - started
+        log.debug 'discovery ended: elapsed=%fs (size=%d,%d)' % [
+          elapsed, discoveries.size, deletions.size
+        ]
         sleep discover_interval
       end
     end
-
-    log.debug 'started discover'
   end
 
   # Stop the Discover thread. Effectively only once.

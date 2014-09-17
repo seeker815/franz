@@ -58,13 +58,20 @@ module Franz
 
       @thread = Thread.new do
         until @stop
+          started = Time.now
           until discoveries.empty?
             @stats[discoveries.shift] = nil
           end
+          elapsed2 = Time.now - started
+          num_files = stats.keys.size
           watch.each do |deleted|
             @stats.delete deleted
             deletions.push deleted
           end
+          elapsed1 = Time.now - started
+          log.fatal 'watch ended: num_files=%d elapsed1=%fs elapsed2=%fs (size=%d)' % [
+            num_files, elapsed1, elapsed2, watch_events.size
+          ]
           sleep watch_interval
         end
       end
@@ -101,9 +108,7 @@ module Franz
     end
 
     def watch
-      started = Time.now
       deleted = []
-      log.debug 'watch statting %d files' % stats.keys.size
       stats.keys.peach(@watch_threads) do |path|
         old_stat    = stats[path]
         stat        = stat_for path
@@ -124,8 +129,6 @@ module Franz
           enqueue :truncated, path, stat[:size]
         end
       end
-      elapsed = Time.now - started
-      log.debug 'watch ended: elapsed=%fs' % elapsed
       return deleted
     end
 

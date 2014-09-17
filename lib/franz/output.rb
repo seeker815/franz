@@ -52,6 +52,7 @@ module Franz
       @thread = Thread.new do
         rand = Random.new
         until @stop
+          started = Time.now
           event = opts[:input].shift
           # event[:tags] = opts[:tags] unless opts[:tags].empty?
           event.delete(:tags)
@@ -75,6 +76,8 @@ module Franz
             JSON::generate(event),
             routing_key: rand.rand(10_000),
             persistent: false
+          elapsed = Time.now - started
+          log.fatal 'output ended: elapsed=%fs' % elapsed
         end
       end
 
