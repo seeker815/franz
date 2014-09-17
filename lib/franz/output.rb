@@ -84,18 +84,18 @@ module Franz
 
           log.debug \
             event: 'output finished',
-            paylod: event,
             elapsed: elapsed1,
             elapsed_waiting_on_agg: elapsed3,
             elapsed_cleaning_event: (elapsed2 - elapsed3),
-            elapsed_publishing_event: (elapsed3 - elapsed2),
-            input_size_before: input_size,
-            input_size_after: opts[:input].size
+            elapsed_publishing_event: (elapsed1 - elapsed2),
+            agg_events_size_before: input_size,
+            agg_events_size_after: opts[:input].size
         end
       end
 
       log.info \
-        event: 'output started'
+        event: 'output started',
+        foreground: @foreground
 
       @thread.join if @foreground
     end
@@ -112,8 +112,7 @@ module Franz
       return if @foreground
       @foreground = true
       @thread.kill
-      log.info \
-        event: 'output stopped'
+      log.info event: 'output stopped'
     end
 
   private

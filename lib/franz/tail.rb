@@ -18,7 +18,7 @@ module Franz
       @tail_events  = opts[:tail_events]  || []
 
       @block_size  = opts[:block_size]  || 32_768 # 32 KiB
-      @cursors     = opts[:cursors]     || Hash.new { |h,k| h[k] = 0 }
+      @cursors     = opts[:cursors]     || Hash.new
       @logger      = opts[:logger]      || Logger.new(STDOUT)
 
       @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
@@ -40,10 +40,10 @@ module Franz
             elapsed: elapsed1,
             elapsed_waiting_on_watch: elapsed2,
             elapsed_handling_event: (elapsed1 - elapsed2),
-            watch_events_before: n,
-            watch_events_after: watch_events.size,
-            tail_events_before: m,
-            tail_events_after: tail_events.size
+            watch_events_size_before: n,
+            watch_events_size_after: watch_events.size,
+            tail_events_size_before: m,
+            tail_events_size_after: tail_events.size
 
           'tail ended: elapsed1=%fs elapsed2=%fs (watch_events.size=%d tail_events.size=%d)' % [
             elapsed1, elapsed2, watch_events.size, tail_events.size
@@ -54,7 +54,8 @@ module Franz
       log.info \
         event: 'tail started',
         watch_events: watch_events,
-        tail_events: tail_events
+        tail_events: tail_events,
+        block_size: block_size
     end
 
     # Stop the Tail thread. Effectively only once.
@@ -65,8 +66,7 @@ module Franz
       @stop = true
       @watch_thread.kill rescue nil
       @tail_thread.kill  rescue nil
-      log.info \
-        event: 'tail stopped'
+      log.info event: 'tail stopped'
       return state
     end
 
@@ -81,6 +81,9 @@ module Franz
     def log ; @logger end
 
     def read path, size
+      @cursors[path] ||= 0
+      watch_events_size = watch_events.size
+      tail_events_size = tail_events.size
       started = Time.now
       start_pos = @cursors[path]
 
@@ -124,8 +127,10 @@ module Franz
         cursor: @cursors[path],
         diff: diff,
         elapsed: elapsed,
-        watch_size: watch_events.size,
-        tail_size: tail_events.size
+        watch_events_size_before: watch_events_size,
+        watch_events_size_after: watch_events.size,
+        tail_events_size_before: tail_events_size,
+        tail_events_size_after: tail_events.size
     end
 
     def close path

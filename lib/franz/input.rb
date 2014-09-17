@@ -59,7 +59,7 @@ module Franz
         last_checkpoint = File.read(last_checkpoint_path)
         state = Marshal.load last_checkpoint
         log.info \
-          event: 'checkpoint loaded',
+          event: 'input checkpoint loaded',
           checkpoint: last_checkpoint_path
       end
 
@@ -125,9 +125,7 @@ module Franz
         end
       end
 
-      log.info \
-        event: 'input started',
-        opts: opts
+      log.info event: 'input started'
     end
 
     # Stop everything. Has the effect of draining all the Queues and waiting on
@@ -142,8 +140,7 @@ module Franz
       @watch.stop
       @tail.stop
       @agg.stop
-      log.info \
-        event: 'input stopped'
+      log.info event: 'input stopped'
       return state
     end
 
@@ -168,7 +165,7 @@ module Franz
       old_checkpoints.pop # Keep last two checkpoints
       old_checkpoints.map { |c| FileUtils.rm c }
       log.info \
-        event: 'checkpoint saved',
+        event: 'input checkpoint saved',
         checkpoint: path
     end
 

@@ -69,9 +69,11 @@ class Franz::Discover
 
     log.info \
       event: 'discover started',
-      configs: @configs,
-      discoveries: @discoveries,
-      deletions: @deletions
+      configs: configs,
+      discoveries: discoveries,
+      deletions: deletions,
+      discover_interval: discover_interval,
+      ignore_before: ignore_before
   end
 
   # Stop the Discover thread. Effectively only once.
@@ -81,8 +83,7 @@ class Franz::Discover
     return state if @stop
     @stop = true
     @thread.kill
-    log.info \
-      event: 'discover stopped'
+    log.info event: 'discover stopped'
     return state
   end
 
@@ -92,7 +93,7 @@ class Franz::Discover
   end
 
 private
-  attr_reader :configs, :discoveries, :deletions, :discover_interval, :known
+  attr_reader :configs, :discoveries, :deletions, :discover_interval, :known, :ignore_before
 
   def log ; @logger end
 

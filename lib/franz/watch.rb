@@ -23,7 +23,6 @@ module Franz
       @deletions    = opts[:deletions]    || []
       @watch_events = opts[:watch_events] || []
 
-      @watch_threads  = opts[:watch_threads]  || 32
       @watch_interval = opts[:watch_interval] || 10
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
@@ -76,14 +75,14 @@ module Franz
             elapsed: elapsed1,
             elapsed_discovering: elapsed2,
             elapsed_watching: (elapsed1 - elapsed2),
-            discoveries_before: discoveries_size,
-            discoveries_after: discoveries.size,
-            deletions_before: deletions_size,
-            deletions_after: deletions.size,
-            watch_before: watch_size,
-            watch_after: watch_events.size,
-            stats_before: stats_size,
-            stats_after: stats.keys.size
+            discoveries_size_before: discoveries_size,
+            discoveries_size_after: discoveries.size,
+            deletions_size_before: deletions_size,
+            deletions_size_after: deletions.size,
+            watch_events_size_before: watch_size,
+            watch_events_size_after: watch_events.size,
+            stats_size_before: stats_size,
+            stats_size_after: stats.keys.size
 
           sleep watch_interval
         end
@@ -93,7 +92,8 @@ module Franz
         event: 'watch started',
         discoveries: discoveries,
         deletions: deletions,
-        watch_events: watch_events
+        watch_events: watch_events,
+        watch_interval: watch_interval
     end
 
     # Stop the Watch thread. Effectively only once.
@@ -103,8 +103,7 @@ module Franz
       return state if @stop
       @stop = true
       @thread.kill
-      log.info \
-        event: 'watch stopped'
+      log.info event: 'watch stopped'
       return state
     end
 

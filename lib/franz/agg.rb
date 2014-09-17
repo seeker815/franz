@@ -48,6 +48,7 @@ module Franz
 
       @t2 = Thread.new do
         until @stop
+          buffer_size = buffer.keys.size
           tail_events_size = tail_events.size
           agg_events_size  = agg_events.size
           started = Time.now
@@ -59,7 +60,9 @@ module Franz
             tail_events_size_before: tail_events_size,
             agg_events_size_before: agg_events_size,
             tail_events_size_after: tail_events.size,
-            agg_events_size_after: agg_events.size
+            agg_events_size_after: agg_events.size,
+            buffer_size_before: buffer_size,
+            buffer_size_after: buffer.keys.size
         end
       end
 
@@ -78,8 +81,7 @@ module Franz
       @stop = true
       @t2.kill
       @t1.join
-      log.info \
-        event: 'agg stopped'
+      log.info event: 'agg stopped'
       return state
     end
 
@@ -162,6 +164,8 @@ module Franz
     end
 
     def flush force=false
+      tail_events_size = tail_events.size
+      agg_events_size  = agg_events.size
       started = Time.now
       keys = buffer.keys
       buffer_size = keys.size
@@ -181,6 +185,10 @@ module Franz
       log.debug \
         event: 'agg flush finished',
         elasped: elapsed,
+        tail_events_size_before: tail_events_size,
+        agg_events_size_before: agg_events_size,
+        tail_events_size_after: tail_events.size,
+        agg_events_size_after: agg_events.size,
         buffer_size_before: buffer_size,
         buffer_size_after: buffer.keys.size
     end
