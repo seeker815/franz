@@ -38,10 +38,6 @@ module Franz
       @buffer = Franz::Sash.new
       @stop   = false
 
-      log.debug 'agg: configs=%s tail_events=%s agg_events=%s' % [
-        @configs, @tail_events, @agg_events
-      ]
-
       @t1 = Thread.new do
         until @stop
           flush
@@ -52,16 +48,26 @@ module Franz
 
       @t2 = Thread.new do
         until @stop
+          tail_events_size = tail_events.size
+          agg_events_size  = agg_events.size
           started = Time.now
           capture
           elapsed = Time.now - started
-          log.fatal 'agg ended: elapsed=%fs (tail_events.size=%d, agg_events.size=%d)' % [
-            elapsed, tail_events.size, agg_events.size
-          ]
+          log.debug \
+            event: 'agg finished',
+            elapsed: elapsed,
+            tail_events_size_before: tail_events_size,
+            agg_events_size_before: agg_events_size,
+            tail_events_size_after: tail_events.size,
+            agg_events_size_after: agg_events.size
         end
       end
 
-      log.debug 'started agg'
+      log.info \
+        event: 'agg started',
+        configs: @configs,
+        tail_events: @tail_events,
+        agg_events: @agg_events
     end
 
     # Stop the Agg thread. Effectively only once.
@@ -72,7 +78,8 @@ module Franz
       @stop = true
       @t2.kill
       @t1.join
-      log.debug 'stopped agg'
+      log.info \
+        event: 'agg stopped'
       return state
     end
 
@@ -104,7 +111,9 @@ module Franz
             return type
           end
         end
-        log.error 'Could not identify type for path=%s' % path
+        log.warn \
+          event: 'agg type() failed',
+          path: path
         @types[path] = nil
         return nil
       end
@@ -124,17 +133,19 @@ module Franz
       return if t.nil?
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
-      log.trace 'enqueue path=%s message=%s type=%s seq=%s' % [
-        path.inspect, m.inspect, t.inspect, s.inspect
-      ]
+      log.trace \
+        event: 'agg enqueue',
+        path: path,
+        type: t,
+        seq: s
       agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
     end
 
     def capture
       event = tail_events.shift
-      log.trace 'received path=%s line=%s' % [
-        event[:path], event[:line]
-      ]
+      log.trace \
+        event: 'agg capture',
+        path: event[:path]
       multiline = config(event[:path])[:multiline] rescue nil
       if multiline.nil?
         enqueue event[:path], event[:line] unless event[:line].empty?
@@ -152,10 +163,14 @@ module Franz
 
     def flush force=false
       started = Time.now
-      buffer.keys.each do |path|
+      keys = buffer.keys
+      buffer_size = keys.size
+      keys.each do |path|
         lock[path].synchronize do
           if started - buffer.mtime(path) >= flush_interval || force
-            log.trace 'flushing path=%s' % path.inspect
+            log.trace \
+              event: 'agg flush',
+              path: path
             buffered = buffer.remove(path)
             lines    = buffered.map { |e| e[:line] }.join("\n")
             enqueue path, lines unless lines.empty?
@@ -163,7 +178,11 @@ module Franz
         end
       end
       elapsed = Time.now - started
-      log.debug 'flushed elapsed=%fs' % elapsed
+      log.debug \
+        event: 'agg flush finished',
+        elasped: elapsed,
+        buffer_size_before: buffer_size,
+        buffer_size_after: buffer.keys.size
     end
   end
 end

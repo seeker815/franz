@@ -52,31 +52,48 @@ module Franz
 
       @stop = false
 
-      log.debug 'watch: discoveries=%s deletions=%s watch_events=%s' % [
-        @discoveries, @deletions, @watch_events
-      ]
-
       @thread = Thread.new do
         until @stop
+          discoveries_size = discoveries.size
+          deletions_size = deletions.size
+          watch_size = watch_events.size
+          stats_size = stats.keys.size
           started = Time.now
+
           until discoveries.empty?
             @stats[discoveries.shift] = nil
           end
           elapsed2 = Time.now - started
-          num_files = stats.keys.size
+
           watch.each do |deleted|
             @stats.delete deleted
             deletions.push deleted
           end
           elapsed1 = Time.now - started
-          log.fatal 'watch ended: num_files=%d elapsed1=%fs elapsed2=%fs (discoveries.size=%d deletions.size=%d watch_events.size=%d)' % [
-            num_files, elapsed1, elapsed2, discoveries.size, deletions.size, watch_events.size
-          ]
+
+          log.debug \
+            event: 'watch finished',
+            elapsed: elapsed1,
+            elapsed_discovering: elapsed2,
+            elapsed_watching: (elapsed1 - elapsed2),
+            discoveries_before: discoveries_size,
+            discoveries_after: discoveries.size,
+            deletions_before: deletions_size,
+            deletions_after: deletions.size,
+            watch_before: watch_size,
+            watch_after: watch_events.size,
+            stats_before: stats_size,
+            stats_after: stats.keys.size
+
           sleep watch_interval
         end
       end
 
-      log.debug 'started watch'
+      log.info \
+        event: 'watch started',
+        discoveries: discoveries,
+        deletions: deletions,
+        watch_events: watch_events
     end
 
     # Stop the Watch thread. Effectively only once.
@@ -86,7 +103,8 @@ module Franz
       return state if @stop
       @stop = true
       @thread.kill
-      log.debug 'stopped watch'
+      log.info \
+        event: 'watch stopped'
       return state
     end
 
@@ -101,17 +119,21 @@ module Franz
     def log ; @logger end
 
     def enqueue name, path, size=nil
-      log.trace 'enqueue: name=%s path=%s size=%s' % [
-        name.inspect, path.inspect, size.inspect
-      ]
       watch_events.push name: name, path: path, size: size
+      log.trace \
+        event: 'watch enqueued',
+        name: name,
+        path: path,
+        size: size
     end
 
     def watch
       deleted = []
       started1 = Time.now
-      stats.keys.peach(@watch_threads) do |path|
-        started2 = Time.now
+      keys = stats.keys
+      size = keys.size
+      keys.each do |path|
+        started2    = Time.now
         old_stat    = stats[path]
         stat        = stat_for path
         stats[path] = stat
@@ -130,12 +152,17 @@ module Franz
         elsif file_truncated? old_stat, stat
           enqueue :truncated, path, stat[:size]
         end
+
         now = Time.now
         elapsed1 = now - started1
         elapsed2 = now - started2
-        log.fatal 'stat ended: elapsed1=%fs elapsed2=%fs (watch_events.size=%d)' % [
-          elapsed1, elapsed2, watch_events.size
-        ]
+
+        log.trace \
+          event: 'watch stat finished',
+          elapsed: elapsed2,
+          elapsed_in_watch: elapsed1,
+          stat_size: size,
+          watch_size: watch_events.size
       end
       return deleted
     end

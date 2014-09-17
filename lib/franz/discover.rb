@@ -33,30 +33,45 @@ class Franz::Discover
 
     @stop = false
 
-    log.debug 'discover: configs=%s discoveries=%s deletions=%s' % [
-      @configs, @discoveries, @deletions
-    ]
-
     @thread = Thread.new do
       until @stop
+        known_size = @known.size
+        discoveries_size = discoveries.size
+        deletions_size = deletions.size
         started = Time.now
         until deletions.empty?
           d = deletions.pop
           @known.delete d
-          log.debug 'deleted: %s' % d.inspect
+          log.trace \
+            event: 'discover deleted',
+            path: d
         end
         discover.each do |discovery|
           discoveries.push discovery
           @known.push discovery
-          log.debug 'discovered: %s' % discovery.inspect
+          log.trace \
+            event: 'discover discovered',
+            path: discovery
         end
         elapsed = Time.now - started
-        log.debug 'discovery ended: elapsed=%fs (discoveries.size=%d deletions.size=%d)' % [
-          elapsed, discoveries.size, deletions.size
-        ]
+        log.debug \
+          event: 'discover finished',
+          elapsed: elapsed,
+          known_size_before: known_size,
+          known_size_after: @known.size,
+          discoveries_size_before: discoveries_size,
+          discoveries_size_after: discoveries.size,
+          deletions_size_before: deletions_size,
+          deletions_size_after: deletions.size
         sleep discover_interval
       end
     end
+
+    log.info \
+      event: 'discover started',
+      configs: @configs,
+      discoveries: @discoveries,
+      deletions: @deletions
   end
 
   # Stop the Discover thread. Effectively only once.
@@ -66,7 +81,8 @@ class Franz::Discover
     return state if @stop
     @stop = true
     @thread.kill
-    log.debug 'stopped discover'
+    log.info \
+      event: 'discover stopped'
     return state
   end
 

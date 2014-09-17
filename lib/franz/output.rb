@@ -53,12 +53,12 @@ module Franz
       @thread = Thread.new do
         rand = Random.new
         until @stop
+          input_size = opts[:input].size
           started = Time.now
-          size = opts[:input].size
+
           event = opts[:input].shift
-          # event[:tags] = opts[:tags] unless opts[:tags].empty?
-          event.delete(:tags)
           elapsed3 = Time.now - started
+
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/rel', '')
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/live', '')
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/beta', '')
@@ -75,17 +75,27 @@ module Franz
           event[:path] = event[:path].sub('/home/denimuser', '')
           event[:path] = event[:path].sub('/var/log', '')
           elapsed2 = Time.now - started
-          log.trace 'publishing event=%s' % event.inspect
+
           exchange.publish \
             JSON::generate(event),
             routing_key: rand.rand(10_000),
             persistent: false
           elapsed1 = Time.now - started
-          log.fatal 'output ended: elapsed1=%fs elapsed2=%fs elapsed3=%fs (input.size=%d)' % [
-            elapsed1, elapsed2, elapsed3, size
-          ]
+
+          log.debug \
+            event: 'output finished',
+            paylod: event,
+            elapsed: elapsed1,
+            elapsed_waiting_on_agg: elapsed3,
+            elapsed_cleaning_event: (elapsed2 - elapsed3),
+            elapsed_publishing_event: (elapsed3 - elapsed2),
+            input_size_before: input_size,
+            input_size_after: opts[:input].size
         end
       end
+
+      @log.info \
+        event: 'output started'
 
       @thread.join if @foreground
     end
@@ -102,6 +112,8 @@ module Franz
       return if @foreground
       @foreground = true
       @thread.kill
+      @log.info \
+        event: 'output stopped'
     end
 
   private

@@ -47,8 +47,6 @@ module Franz
       @checkpoint_path     = opts[:checkpoint].sub('*', '%d')
       @checkpoint_glob     = opts[:checkpoint]
 
-      log.debug 'input: opts=%s' % JSON::pretty_generate(opts)
-
       # The checkpoint contains a Marshalled Hash with a compact representation of
       # stateful inputs to various Franz streaming classes (e.g. the "known" option
       # to Franz::Discover). This state file is generated automatically every time
@@ -60,7 +58,9 @@ module Franz
       unless last_checkpoint_path.nil?
         last_checkpoint = File.read(last_checkpoint_path)
         state = Marshal.load last_checkpoint
-        log.debug 'Loaded %s' % last_checkpoint_path.inspect
+        log.info \
+          event: 'checkpoint loaded',
+          checkpoint: last_checkpoint_path
       end
 
       full_state = state.nil? ? nil : state.dup
@@ -76,14 +76,11 @@ module Franz
         stats[path]   = state[path]
       end
 
-      log.debug 'starting input...'
-
       discoveries  = SizedQueue.new opts[:input][:discover_bound]
       deletions    = SizedQueue.new opts[:input][:discover_bound]
       watch_events = SizedQueue.new opts[:input][:watch_bound]
       tail_events  = SizedQueue.new opts[:input][:tail_bound]
 
-      log.debug 'starting discover...'
       @disover = Franz::Discover.new \
         discoveries: discoveries,
         deletions: deletions,
@@ -94,7 +91,6 @@ module Franz
         known: known,
         full_state: full_state
 
-      log.debug 'starting watch...'
       @watch = Franz::Watch.new \
         discoveries: discoveries,
         deletions: deletions,
@@ -104,7 +100,6 @@ module Franz
         stats: stats,
         full_state: full_state
 
-      log.debug 'starting tail...'
       @tail = Franz::Tail.new \
         watch_events: watch_events,
         tail_events: tail_events,
@@ -113,7 +108,6 @@ module Franz
         cursors: cursors,
         full_state: full_state
 
-      log.debug 'starting agg...'
       @agg = Franz::Agg.new \
         configs: opts[:input][:configs],
         tail_events: tail_events,
@@ -125,14 +119,15 @@ module Franz
 
       @stop = false
       @t = Thread.new do
-        log.debug 'starting checkpoint'
         until @stop
           checkpoint
           sleep @checkpoint_interval
         end
       end
 
-      log.debug 'started input'
+      log.info \
+        event: 'input started',
+        opts: opts
     end
 
     # Stop everything. Has the effect of draining all the Queues and waiting on
@@ -147,7 +142,8 @@ module Franz
       @watch.stop
       @tail.stop
       @agg.stop
-      log.debug 'stopped input'
+      log.info \
+        event: 'input stopped'
       return state
     end
 
@@ -168,14 +164,12 @@ module Franz
     def checkpoint
       old_checkpoints = Dir[@checkpoint_glob].sort_by { |p| File.mtime p }
       path = @checkpoint_path % Time.now
-      begin
-        File.open(path, 'w') { |f| f.write Marshal.dump(state) }
-        old_checkpoints.pop # Keep last two checkpoints
-        old_checkpoints.map { |c| FileUtils.rm c }
-        log.info 'Wrote %s' % path.inspect
-      rescue Errno::EMFILE
-        log.warn 'Could not write checkpoint (too many open files)'
-      end
+      File.open(path, 'w') { |f| f.write Marshal.dump(state) }
+      old_checkpoints.pop # Keep last two checkpoints
+      old_checkpoints.map { |c| FileUtils.rm c }
+      log.info \
+        event: 'checkpoint saved',
+        checkpoint: path
     end
 
   private
