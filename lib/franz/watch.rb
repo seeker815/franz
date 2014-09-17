@@ -1,4 +1,4 @@
-require 'pmap'
+require 'set'
 
 require 'logger'
 
@@ -52,6 +52,8 @@ module Franz
       @stop = false
 
       @thread = Thread.new do
+        stale_updated = 0
+
         until @stop
           discoveries_size = discoveries.size
           deletions_size = deletions.size
@@ -64,7 +66,16 @@ module Franz
           end
           elapsed2 = Time.now - started
 
-          watch.each do |deleted|
+          skip_stale = true
+          if stale_updated < started.to_i - 10 * 60
+            log.warn \
+              event: 'watch statting stale',
+              last_statted: stale_updated
+            skip_stale = false
+            stale_updated = Time.now.to_i
+          end
+
+          watch(skip_stale).each do |deleted|
             @stats.delete deleted
             deletions.push deleted
           end
@@ -126,15 +137,36 @@ module Franz
         size: size
     end
 
-    def watch
+    def watch skip_stale=true
       deleted = []
       started1 = Time.now
       keys = stats.keys
       size = keys.size
+      i = 0
+
+      fifteen_minutes_ago = Time.now - 15 * 60
+      num_skipped = 0
+
       keys.each do |path|
-        started2    = Time.now
-        old_stat    = stats[path]
-        stat        = stat_for path
+        i += 1
+        started2 = Time.now
+        old_stat = stats[path]
+
+        if skip_stale \
+        && old_stat \
+        && old_stat[:mtime] \
+        && old_stat[:mtime] < fifteen_minutes_ago
+          num_skipped += 1
+          log.warn \
+            event: 'watch stat skipped',
+            path: path,
+            mtime: old_stat[:mtime],
+            stat_num: i,
+            stat_size: size
+          next
+        end
+
+        stat = stat_for path
         stats[path] = stat
 
         if file_created? old_stat, stat
@@ -160,8 +192,10 @@ module Franz
           event: 'watch stat finished',
           elapsed: elapsed2,
           elapsed_in_watch: elapsed1,
+          stat_num: i,
           stat_size: size,
-          watch_size: watch_events.size
+          watch_size: watch_events.size,
+          skipped: num_skipped
       end
       return deleted
     end
@@ -180,7 +214,8 @@ module Franz
             maj: stat.dev_major,
             min: stat.dev_minor
           },
-          size: stat.size
+          size: stat.size,
+          mtime: stat.mtime
         }
       rescue Errno::ENOENT
         nil

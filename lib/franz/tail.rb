@@ -44,10 +44,6 @@ module Franz
             watch_events_size_after: watch_events.size,
             tail_events_size_before: m,
             tail_events_size_after: tail_events.size
-
-          'tail ended: elapsed1=%fs elapsed2=%fs (watch_events.size=%d tail_events.size=%d)' % [
-            elapsed1, elapsed2, watch_events.size, tail_events.size
-          ]
         end
       end
 
@@ -134,7 +130,7 @@ module Franz
     end
 
     def close path
-      @cursors[path] = 0
+      @cursors.delete(path)
       log.trace \
         event: 'tail closed',
         path: path
