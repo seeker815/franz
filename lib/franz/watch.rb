@@ -1,3 +1,5 @@
+require 'pmap'
+
 require 'logger'
 
 module Franz
@@ -21,31 +23,32 @@ module Franz
       @deletions    = opts[:deletions]    || []
       @watch_events = opts[:watch_events] || []
 
+      @watch_threads  = opts[:watch_threads]  || 32
       @watch_interval = opts[:watch_interval] || 10
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 
-      # Make sure we're up-to-date
-      stats.keys.each do |path|
-        begin
-          stat   = File.stat(path)
-          size   = stat.size
-          cursor = opts[:full_state][path][:cursor]
-          if cursor.nil?
-            # nop
-          elsif size < cursor
-            enqueue name: :truncated, path: path, size: size
-          elsif size > cursor
-            enqueue name: :appended, path: path, size: size
-          end
-        rescue KeyError
-          log.error 'Erm, shouldna got here'
-        rescue Errno::ENOENT
-          @stats.delete(path)
-          enqueue :deleted, path
-          deleted << path
-        end
-      end
+      # # Make sure we're up-to-date
+      # stats.keys.each do |path|
+      #   begin
+      #     stat   = File.stat(path)
+      #     size   = stat.size
+      #     cursor = opts[:full_state][path][:cursor]
+      #     if cursor.nil?
+      #       # nop
+      #     elsif size < cursor
+      #       enqueue name: :truncated, path: path, size: size
+      #     elsif size > cursor
+      #       enqueue name: :appended, path: path, size: size
+      #     end
+      #   rescue KeyError
+      #     log.error 'Erm, shouldna got here'
+      #   rescue Errno::ENOENT
+      #     @stats.delete(path)
+      #     enqueue :deleted, path
+      #     deleted << path
+      #   end
+      # end
 
       @stop = false
 
@@ -101,12 +104,10 @@ module Franz
       started = Time.now
       deleted = []
       log.debug 'watch statting %d files' % stats.keys.size
-      stats.keys.each do |path|
-        started2    = Time.now
+      stats.keys.peach(@watch_threads) do |path|
         old_stat    = stats[path]
         stat        = stat_for path
         stats[path] = stat
-        elapsed2    = Time.now - started2
 
         if file_created? old_stat, stat
           enqueue :created, path
@@ -122,14 +123,9 @@ module Franz
         elsif file_truncated? old_stat, stat
           enqueue :truncated, path, stat[:size]
         end
-
-        elapsed1 = Time.now - started2
-        log.debug 'watch statted: path=%s elapsed1=%fs elapsed2=%fs' % [
-          path.inspect, elapsed1, elapsed2
-        ]
       end
       elapsed = Time.now - started
-      log.warn 'watch ended: elapsed=%fs' % elapsed
+      log.debug 'watch ended: elapsed=%fs' % elapsed
       return deleted
     end
 

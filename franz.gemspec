@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'trollop', '~> 2'
   s.add_runtime_dependency 'colorize', '~> 0'
   s.add_runtime_dependency 'deep_merge', '~> 1'
-  s.add_runtime_dependency 'consistent-hashing', '~> 1'
+  s.add_runtime_dependency 'pmap', '~> 1'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- test/*`.split("\n")
