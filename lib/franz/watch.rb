@@ -109,7 +109,9 @@ module Franz
 
     def watch
       deleted = []
+      started1 = Time.now
       stats.keys.peach(@watch_threads) do |path|
+        started2 = Time.now
         old_stat    = stats[path]
         stat        = stat_for path
         stats[path] = stat
@@ -128,6 +130,12 @@ module Franz
         elsif file_truncated? old_stat, stat
           enqueue :truncated, path, stat[:size]
         end
+        now = Time.now
+        elapsed1 = now - started1
+        elapsed2 = now - started2
+        log.fatal 'stat ended: elapsed1=%fs elapsed2=%fs (size=%d)' % [
+          elapsed1, elapsed2, watch_events.size
+        ]
       end
       return deleted
     end
