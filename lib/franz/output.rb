@@ -34,17 +34,14 @@ module Franz
 
       @logger = opts[:logger]
 
-      rabbit = Bunny.new opts[:output][:connection].merge \
-        automatically_recover: true,
-        threaded: true,
-        heartbeat: 90
+      rabbit = Bunny.new opts[:output][:connection]
 
       rabbit.start
 
       channel  = rabbit.create_channel
       exchange = opts[:output][:exchange].delete(:name)
       exchange = channel.exchange exchange, \
-        opts[:output][:exchange].merge(type: 'x-consistent-hash')
+        { type: 'x-consistent-hash' }.merge(opts[:output][:exchange])
 
       @stop = false
       @foreground = opts[:foreground]
@@ -56,6 +53,7 @@ module Franz
           event = opts[:input].shift
           # event[:tags] = opts[:tags] unless opts[:tags].empty?
           event.delete(:tags)
+          elapsed3 = Time.now - started
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/rel', '')
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/live', '')
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/beta', '')
@@ -71,13 +69,16 @@ module Franz
           event[:path] = event[:path].sub('/home/denimuser/rivet/bjn/logs', '')
           event[:path] = event[:path].sub('/home/denimuser', '')
           event[:path] = event[:path].sub('/var/log', '')
+          elapsed2 = Time.now - started
           log.trace 'publishing event=%s' % event.inspect
           exchange.publish \
             JSON::generate(event),
             routing_key: rand.rand(10_000),
             persistent: false
-          elapsed = Time.now - started
-          log.fatal 'output ended: elapsed=%fs' % elapsed
+          elapsed1 = Time.now - started
+          log.fatal 'output ended: elapsed1=%fs elapsed2=%fs elapsed3=%fs' % [
+            elapsed1, elapsed2, elapsed3
+          ]
         end
       end
 
