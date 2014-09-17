@@ -65,6 +65,9 @@ module Franz
           event[:path] = event[:path].sub('/home/denimuser/cobalt-builds/live', '')
           event[:path] = event[:path].sub('/home/denimuser/cobalt-builds/beta', '')
           event[:path] = event[:path].sub('/home/denimuser/rivet-builds', '')
+          event[:path] = event[:path].sub('/home/denimuser/denim/logs', '')
+          event[:path] = event[:path].sub('/home/denimuser/seam/logs', '')
+          event[:path] = event[:path].sub('/home/denimuser/rivet/bjn/logs', '')
           event[:path] = event[:path].sub('/home/denimuser', '')
           event[:path] = event[:path].sub('/var/log', '')
           log.trace 'publishing event=%s' % event.inspect

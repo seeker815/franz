@@ -94,6 +94,16 @@ module Franz
         known: known,
         full_state: full_state
 
+      log.debug 'starting watch...'
+      @watch = Franz::Watch.new \
+        discoveries: discoveries,
+        deletions: deletions,
+        watch_events: watch_events,
+        watch_interval: opts[:input][:watch_interval],
+        logger: opts[:logger],
+        stats: stats,
+        full_state: full_state
+
       log.debug 'starting tail...'
       @tail = Franz::Tail.new \
         watch_events: watch_events,
@@ -111,16 +121,6 @@ module Franz
         flush_interval: opts[:input][:flush_interval],
         logger: opts[:logger],
         seqs: seqs,
-        full_state: full_state
-
-      log.debug 'starting watch...'
-      @watch = Franz::Watch.new \
-        discoveries: discoveries,
-        deletions: deletions,
-        watch_events: watch_events,
-        watch_interval: opts[:input][:watch_interval],
-        logger: opts[:logger],
-        stats: stats,
         full_state: full_state
 
       @stop = false

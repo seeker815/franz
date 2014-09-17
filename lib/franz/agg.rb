@@ -108,23 +108,22 @@ module Franz
       seqs[path] = seqs.fetch(path, 0) + 1
     end
 
-    def real_path path
-      Pathname.new(path).realpath.to_s rescue path
-    end
-
     def enqueue path, message
-      started = Time.now
-      p = real_path path
       t = type path
-      return if t.nil?
       s = seq path
-      m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
-      log.trace 'enqueue type=%s path=%s seq=%d message=%s' % [
-        t.inspect, p.inspect, s.inspect, m.inspect
+      return if t.nil?
+      log.trace 'enqueue type=%s seq=%d path=%s' % [
+        t.inspect, s.inspect, path.inspect
       ]
-      agg_events.push path: p, message: m, type: t, host: @@host, '@seq' => s
-      elapsed = Time.now - started
-      log.debug 'enqueued elapsed=%fs' % elapsed
+      started = Time.now
+
+      m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
+      elapsed2 = Time.now - started
+
+      agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
+      elapsed1 = Time.now - started
+
+      log.debug 'enqueued elapsed1=%fs elapsed2=%fs' % [ elapsed1, elapsed2 ]
     end
 
     def capture
