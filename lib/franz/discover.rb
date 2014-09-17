@@ -51,7 +51,7 @@ class Franz::Discover
           log.debug 'discovered: %s' % discovery.inspect
         end
         elapsed = Time.now - started
-        log.debug 'discovery ended: elapsed=%fs (size=%d,%d)' % [
+        log.debug 'discovery ended: elapsed=%fs (discoveries.size=%d deletions.size=%d)' % [
           elapsed, discoveries.size, deletions.size
         ]
         sleep discover_interval

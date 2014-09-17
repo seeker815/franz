@@ -81,7 +81,7 @@ module Franz
             routing_key: rand.rand(10_000),
             persistent: false
           elapsed1 = Time.now - started
-          log.fatal 'output ended: elapsed1=%fs elapsed2=%fs elapsed3=%fs (size=%d)' % [
+          log.fatal 'output ended: elapsed1=%fs elapsed2=%fs elapsed3=%fs (input.size=%d)' % [
             elapsed1, elapsed2, elapsed3, size
           ]
         end

@@ -69,8 +69,8 @@ module Franz
             deletions.push deleted
           end
           elapsed1 = Time.now - started
-          log.fatal 'watch ended: num_files=%d elapsed1=%fs elapsed2=%fs (size=%d)' % [
-            num_files, elapsed1, elapsed2, watch_events.size
+          log.fatal 'watch ended: num_files=%d elapsed1=%fs elapsed2=%fs (discoveries.size=%d deletions.size=%d watch_events.size=%d)' % [
+            num_files, elapsed1, elapsed2, discoveries.size, deletions.size, watch_events.size
           ]
           sleep watch_interval
         end
@@ -133,7 +133,7 @@ module Franz
         now = Time.now
         elapsed1 = now - started1
         elapsed2 = now - started2
-        log.fatal 'stat ended: elapsed1=%fs elapsed2=%fs (size=%d)' % [
+        log.fatal 'stat ended: elapsed1=%fs elapsed2=%fs (watch_events.size=%d)' % [
           elapsed1, elapsed2, watch_events.size
         ]
       end

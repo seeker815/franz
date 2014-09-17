@@ -55,8 +55,8 @@ module Franz
           started = Time.now
           capture
           elapsed = Time.now - started
-          log.fatal 'agg ended: elapsed=%fs (size=%d)' % [
-            elapsed, agg_events.size
+          log.fatal 'agg ended: elapsed=%fs (tail_events.size=%d, agg_events.size=%d)' % [
+            elapsed, tail_events.size, agg_events.size
           ]
         end
       end

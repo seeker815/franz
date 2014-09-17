@@ -34,8 +34,8 @@ module Franz
           started = Time.now
           handle(watch_events.shift)
           elapsed = Time.now - started
-          log.fatal 'tail ended: elapsed=%fs (size=%d)' % [
-            elapsed, tail_events.size
+          log.fatal 'tail ended: elapsed=%fs (watch_events.size=%d tail_events.size=%d)' % [
+            elapsed, watch_events.size, tail_events.size
           ]
         end
       end
