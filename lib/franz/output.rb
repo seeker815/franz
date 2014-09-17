@@ -52,6 +52,7 @@ module Franz
 
       @thread = Thread.new do
         rand = Random.new
+        n = 0
         until @stop
           input_size = opts[:input].size
           started = Time.now
@@ -82,6 +83,7 @@ module Franz
             persistent: false
           elapsed1 = Time.now - started
 
+          n += 1
           log.debug \
             event: 'output finished',
             elapsed: elapsed1,
@@ -89,7 +91,8 @@ module Franz
             elapsed_cleaning_event: (elapsed2 - elapsed3),
             elapsed_publishing_event: (elapsed1 - elapsed2),
             agg_events_size_before: input_size,
-            agg_events_size_after: opts[:input].size
+            agg_events_size_after: opts[:input].size,
+            published: n
         end
       end
 

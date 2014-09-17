@@ -103,7 +103,7 @@ module Franz
       @tail = Franz::Tail.new \
         watch_events: watch_events,
         tail_events: tail_events,
-        eviction_interval: opts[:input][:eviction_interval],
+        block_size: opts[:input][:block_size],
         logger: opts[:logger],
         cursors: cursors,
         full_state: full_state

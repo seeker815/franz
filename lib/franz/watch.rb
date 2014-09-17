@@ -149,7 +149,6 @@ module Franz
 
       keys.each do |path|
         i += 1
-        started2 = Time.now
         old_stat = stats[path]
 
         if skip_stale \
@@ -157,7 +156,7 @@ module Franz
         && old_stat[:mtime] \
         && old_stat[:mtime] < fifteen_minutes_ago
           num_skipped += 1
-          log.warn \
+          log.trace \
             event: 'watch stat skipped',
             path: path,
             mtime: old_stat[:mtime],
@@ -166,6 +165,7 @@ module Franz
           next
         end
 
+        started2 = Time.now
         stat = stat_for path
         stats[path] = stat
 
