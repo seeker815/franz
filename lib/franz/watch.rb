@@ -98,11 +98,15 @@ module Franz
     end
 
     def watch
+      started = Time.now
       deleted = []
+      log.debug 'watch statting %d files' % stats.keys.size
       stats.keys.each do |path|
+        started2    = Time.now
         old_stat    = stats[path]
         stat        = stat_for path
         stats[path] = stat
+        elapsed2    = Time.now - started2
 
         if file_created? old_stat, stat
           enqueue :created, path
@@ -118,7 +122,14 @@ module Franz
         elsif file_truncated? old_stat, stat
           enqueue :truncated, path, stat[:size]
         end
+
+        elapsed1 = Time.now - started2
+        log.debug 'watch statted: path=%s elapsed1=%fs elapsed2=%fs' % [
+          path.inspect, elapsed1, elapsed2
+        ]
       end
+      elapsed = Time.now - started
+      log.warn 'watch ended: elapsed=%fs' % elapsed
       return deleted
     end
 

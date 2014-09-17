@@ -92,10 +92,14 @@ module Franz
             }
             included && !excluded
           }
-          return @types[path] = type unless type.nil?
+          unless type.nil?
+            @types[path] = type
+            return type
+          end
         end
         log.error 'Could not identify type for path=%s' % path
         @types[path] = nil
+        return nil
       end
     end
 
@@ -109,24 +113,14 @@ module Franz
     end
 
     def enqueue path, message
-      started = Time.now
       t = type path
-      s = seq path
       return if t.nil?
-      log.trace 'enqueue type=%s seq=%d path=%s' % [
-        t.inspect, s.inspect, path.inspect
-      ]
-      elapsed3 = Time.now - started
-
+      s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
-      elapsed2 = Time.now - started
-
-      agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
-      elapsed1 = Time.now - started
-
-      log.debug 'enqueued elapsed1=%fs elapsed2=%fs elapsed3=%fs' % [
-        elapsed1, elapsed2, elapsed3
+      log.trace 'enqueue path=%s message=%s type=%s seq=%s' % [
+        path.inspect, m.inspect, t.inspect, s.inspect
       ]
+      agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
     end
 
     def capture
