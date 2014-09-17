@@ -52,12 +52,12 @@ module Franz
 
       @t2 = Thread.new do
         until @stop
-          # started = Time.now
+          started = Time.now
           capture
-          # elapsed = Time.now - started
-          # log.fatal 'agg ended: elapsed=%fs (size=%d)' % [
-          #   elapsed, agg_events.size
-          # ]
+          elapsed = Time.now - started
+          log.fatal 'agg ended: elapsed=%fs (size=%d)' % [
+            elapsed, agg_events.size
+          ]
         end
       end
 

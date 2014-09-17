@@ -54,6 +54,7 @@ module Franz
         rand = Random.new
         until @stop
           started = Time.now
+          size = opts[:input].size
           event = opts[:input].shift
           # event[:tags] = opts[:tags] unless opts[:tags].empty?
           event.delete(:tags)
@@ -80,8 +81,8 @@ module Franz
             routing_key: rand.rand(10_000),
             persistent: false
           elapsed1 = Time.now - started
-          log.fatal 'output ended: elapsed1=%fs elapsed2=%fs elapsed3=%fs' % [
-            elapsed1, elapsed2, elapsed3
+          log.fatal 'output ended: elapsed1=%fs elapsed2=%fs elapsed3=%fs (size=%d)' % [
+            elapsed1, elapsed2, elapsed3, size
           ]
         end
       end
