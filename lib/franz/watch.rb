@@ -52,7 +52,7 @@ module Franz
       @stop = false
 
       @thread = Thread.new do
-        stale_updated = 0
+        stale_updated = Time.now.to_i
 
         until @stop
           discoveries_size = discoveries.size
@@ -81,7 +81,7 @@ module Franz
           end
           elapsed1 = Time.now - started
 
-          log.trace \
+          log.debug \
             event: 'watch finished',
             elapsed: elapsed1,
             elapsed_discovering: elapsed2,
@@ -93,7 +93,8 @@ module Franz
             watch_events_size_before: watch_size,
             watch_events_size_after: watch_events.size,
             stats_size_before: stats_size,
-            stats_size_after: stats.keys.size
+            stats_size_after: stats.keys.size,
+            skipped: @num_skipped
 
           sleep watch_interval
         end
@@ -145,7 +146,7 @@ module Franz
       i = 0
 
       fifteen_minutes_ago = Time.now - 15 * 60
-      num_skipped = 0
+      @num_skipped = 0
 
       keys.each do |path|
         i += 1
@@ -155,7 +156,7 @@ module Franz
         && old_stat \
         && old_stat[:mtime] \
         && old_stat[:mtime] < fifteen_minutes_ago
-          num_skipped += 1
+          @num_skipped += 1
           log.trace \
             event: 'watch stat skipped',
             path: path,
@@ -195,7 +196,7 @@ module Franz
           stat_num: i,
           stat_size: size,
           watch_size: watch_events.size,
-          skipped: num_skipped
+          skipped: @num_skipped
       end
       return deleted
     end

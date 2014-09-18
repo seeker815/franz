@@ -109,7 +109,7 @@ module Franz
             elapsed: elapsed,
             watch_size: watch_events.size,
             tail_size: tail_events.size
-        rescue EOFError, Errno::ENOENT
+        rescue EOFError, Errno::ENOENT, NoMethodError
           # we're done here
         end
       end

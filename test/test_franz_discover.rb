@@ -34,7 +34,7 @@ class TestFranzDiscover < MiniTest::Test
   def test_discovers_new_file
     start_discovery known: []
     tmp = tempfile %w[ test .log ]
-    sleep 1 # Time to discover
+    sleep 3 # Time to discover
     known = stop_discovery
     assert known.include?(tmp.path)
   end
