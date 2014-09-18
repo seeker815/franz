@@ -157,12 +157,6 @@ module Franz
         && old_stat[:mtime] \
         && old_stat[:mtime] < fifteen_minutes_ago
           @num_skipped += 1
-          log.trace \
-            event: 'watch stat skipped',
-            path: path,
-            mtime: old_stat[:mtime],
-            stat_num: i,
-            stat_size: size
           next
         end
 
