@@ -38,7 +38,8 @@ class Franz::Discover
         known_size = @known.size
         discoveries_size = discoveries.size
         deletions_size = deletions.size
-        started = Time.now
+        cp_started = Time.now
+
         until deletions.empty?
           d = deletions.pop
           @known.delete d
@@ -46,17 +47,31 @@ class Franz::Discover
             event: 'discover deleted',
             path: d
         end
-        discover.each do |discovery|
+        cp_handled_deletes = Time.now
+
+        discovered = discover
+        cp_discovered = Time.now
+
+        discovered.each do |discovery|
           discoveries.push discovery
           @known.push discovery
           log.trace \
             event: 'discover discovered',
             path: discovery
         end
-        elapsed = Time.now - started
+        cp_handled_discoveries = Time.now
+
+        elapsed_total = cp_handled_discoveries - cp_started
+        elapsed_handling_discoveries = cp_handled_discoveries - cp_discovered
+        elapsed_in_discovery = cp_discovered - cp_handled_deletes
+        elapsed_handling_deletes = cp_handled_deletes - cp_started
+
         log.debug \
           event: 'discover finished',
-          elapsed: elapsed,
+          elapsed_total: elapsed_total,
+          elapsed_handling_deletes: elapsed_handling_deletes,
+          elapsed_in_discovery: elapsed_in_discovery,
+          elapsed_handling_discoveries: elapsed_handling_discoveries,
           known_size_before: known_size,
           known_size_after: @known.size,
           discoveries_size_before: discoveries_size,

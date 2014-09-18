@@ -25,6 +25,27 @@ class TestFranzTail < MiniTest::Test
     FileUtils.rm_rf @tmpdir
   end
 
+  def test_handles_reading_after_deletion
+    sample = "Hello, world!\n"
+    start_tail
+    tmp = tempfile %w[ test4 .log ]
+    path = tmp.path
+    tmp.write sample
+    tmp.flush
+    tmp.close
+    sleep 1
+    FileUtils.rm_rf path
+    sleep 2
+    File.open(path, 'w') do |f|
+      f.write sample
+      f.flush
+    end
+    sleep 4
+    cursors = stop_tail
+    assert cursors.include?(tmp.path)
+    assert cursors[tmp.path] == sample.length
+  end
+
   def test_handles_existing_file
     sample = "Hello, world!\n"
     tmp = tempfile %w[ test1 .log ]
@@ -57,7 +78,7 @@ class TestFranzTail < MiniTest::Test
     eviction_interval = 2
     start_tail eviction_interval: eviction_interval
     sleep 0
-    tmp = tempfile %w[ test2 .log ]
+    tmp = tempfile %w[ test3 .log ]
     tmp.write sample
     tmp.flush
     sleep eviction_interval / 2
@@ -68,29 +89,6 @@ class TestFranzTail < MiniTest::Test
     cursors = stop_tail
     assert cursors.include?(tmp.path)
     assert cursors[tmp.path] == sample.length * 2
-  end
-
-  def test_handles_reading_after_deletion
-    sample = "Hello, world!\n"
-    eviction_interval = 2
-    start_tail eviction_interval: eviction_interval
-    sleep 0
-    tmp = tempfile %w[ test2 .log ]
-    path = tmp.path
-    tmp.write sample
-    tmp.flush
-    tmp.close
-    sleep eviction_interval / 2
-    FileUtils.rm_rf path
-    sleep eviction_interval
-    File.open(path, 'w') do |f|
-      f.write sample
-      f.flush
-    end
-    sleep eviction_interval * 2
-    cursors = stop_tail
-    assert cursors.include?(tmp.path)
-    assert cursors[tmp.path] == sample.length
   end
 
 private

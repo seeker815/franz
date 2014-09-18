@@ -27,7 +27,7 @@ class TestPerformance < MiniTest::Test
     @tail_events  = Queue.new
     @agg_events   = Queue.new
     @logger       = Logger.new STDERR
-    @logger.level = Logger::WARN
+    @logger.level = Logger::DEBUG
 
     FileUtils.rm_rf @tmpdir
     FileUtils.mkdir_p @tmpdir
@@ -38,9 +38,10 @@ class TestPerformance < MiniTest::Test
   end
 
   def test_handles_too_many_files_for_ulimit
+    skip
     sample = "Why, hello there, World! How lovely to see you this morning."
-    num_files = 10
-    num_lines_per_file = 100_000
+    num_files = @ulimit * 2
+    num_lines_per_file = 1_000
 
     paths = []
     num_files.times do |i|
@@ -53,6 +54,7 @@ class TestPerformance < MiniTest::Test
       paths << path
     end
 
+    $stderr.puts 'started agg'
     start_agg
     started = Time.now
     until @agg_events.size == num_files * num_lines_per_file

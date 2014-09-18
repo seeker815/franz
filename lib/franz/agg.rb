@@ -47,23 +47,7 @@ module Franz
       end
 
       @t2 = Thread.new do
-        until @stop
-          buffer_size = buffer.keys.size
-          tail_events_size = tail_events.size
-          agg_events_size  = agg_events.size
-          started = Time.now
-          capture
-          elapsed = Time.now - started
-          log.trace \
-            event: 'agg finished',
-            elapsed: elapsed,
-            tail_events_size_before: tail_events_size,
-            agg_events_size_before: agg_events_size,
-            tail_events_size_after: tail_events.size,
-            agg_events_size_after: agg_events.size,
-            buffer_size_before: buffer_size,
-            buffer_size_after: buffer.keys.size
-        end
+        capture until @stop
       end
 
       log.info \
@@ -144,7 +128,14 @@ module Franz
     end
 
     def capture
+      buffer_size = buffer.keys.size
+      tail_events_size = tail_events.size
+      agg_events_size  = agg_events.size
+      cp_started = Time.now
+
       event = tail_events.shift
+      cp_dequeued = Time.now
+
       log.trace \
         event: 'agg capture',
         path: event[:path]
@@ -161,6 +152,22 @@ module Franz
           buffer.insert event[:path], event
         end
       end
+      cp_captured = Time.now
+
+      elapsed_total      = cp_captured - cp_started
+      elapsed_in_dequeue = cp_dequeued - cp_started
+      elapsed_in_capture = cp_captured - cp_dequeued
+      log.trace \
+        event: 'agg finished',
+        elapsed_total: elapsed_total,
+        elapsed_in_dequeue: elapsed_in_dequeue,
+        elapsed_in_capture: elapsed_in_capture,
+        tail_events_size_before: tail_events_size,
+        agg_events_size_before: agg_events_size,
+        tail_events_size_after: tail_events.size,
+        agg_events_size_after: agg_events.size,
+        buffer_size_before: buffer_size,
+        buffer_size_after: buffer.keys.size
     end
 
     def flush force=false

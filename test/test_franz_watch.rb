@@ -25,7 +25,7 @@ class TestFranzWatch < MiniTest::Test
   end
 
   def test_handles_existing_file
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test1 .log ]
     start_watch
     sleep 2
     stats = stop_watch
@@ -35,7 +35,7 @@ class TestFranzWatch < MiniTest::Test
 
   def test_handles_existing_file_with_content
     content = "Hello, world!\n"
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test2 .log ]
     tmp.write content
     tmp.flush
     start_watch
@@ -47,7 +47,7 @@ class TestFranzWatch < MiniTest::Test
 
   def test_handles_new_file
     start_watch
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test3 .log ]
     sleep 3
     stats = stop_watch
     assert stats.include?(tmp.path)
@@ -57,7 +57,7 @@ class TestFranzWatch < MiniTest::Test
   def test_handles_new_file_with_content
     start_watch
     content = "Hello, world!\n"
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test4 .log ]
     tmp.write content
     tmp.flush
     sleep 3
@@ -70,7 +70,7 @@ class TestFranzWatch < MiniTest::Test
     long_content = "Hello, world!\n"
     short_content = "Bye!\n"
 
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test5 .log ]
     tmp.write long_content
     tmp.flush
 
@@ -91,12 +91,12 @@ class TestFranzWatch < MiniTest::Test
     content1 = "Hello, world!\n"
     content2 = "Bye!\n"
 
-    tmp1 = tempfile %w[ test .log ]
+    tmp1 = tempfile %w[ test6 .log ]
     tmp1.write content1
     tmp1.flush
     tmp1.close
 
-    tmp2 = tempfile %w[ exclude .log ]
+    tmp2 = tempfile %w[ exclude6 .log ]
     tmp2.write content2
     tmp2.flush
     tmp2.close

@@ -24,7 +24,7 @@ class TestFranzDiscover < MiniTest::Test
   end
 
   def test_discovers_existing_file
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test1 .log ]
     start_discovery known: []
     sleep 0.001 # Time to discover
     known = stop_discovery
@@ -33,14 +33,14 @@ class TestFranzDiscover < MiniTest::Test
 
   def test_discovers_new_file
     start_discovery known: []
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test2 .log ]
     sleep 3 # Time to discover
     known = stop_discovery
     assert known.include?(tmp.path)
   end
 
   def test_deletes_deleted_file
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test3 .log ]
     start_discovery known: []
     # at this point, we know Discover has already picked up tmp
     delete tmp.path
@@ -50,7 +50,7 @@ class TestFranzDiscover < MiniTest::Test
   end
 
   def test_deletes_unknown_file
-    tmp = tempfile %w[ test .log ]
+    tmp = tempfile %w[ test4 .log ]
     delete tmp.path
     # tmp never exists as far as Discover is aware
     start_discovery known: []

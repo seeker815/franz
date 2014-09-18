@@ -27,6 +27,7 @@ module Franz
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 
+      @num_skipped = 0
       # # Make sure we're up-to-date
       # stats.keys.each do |path|
       #   begin
@@ -52,22 +53,22 @@ module Franz
       @stop = false
 
       @thread = Thread.new do
-        stale_updated = Time.now.to_i
+        stale_updated = 0
 
         until @stop
           discoveries_size = discoveries.size
           deletions_size = deletions.size
           watch_size = watch_events.size
           stats_size = stats.keys.size
-          started = Time.now
+          cp_started = Time.now
 
           until discoveries.empty?
             @stats[discoveries.shift] = nil
           end
-          elapsed2 = Time.now - started
+          cp_handled_discoveries = Time.now
 
           skip_stale = true
-          if stale_updated < started.to_i - 10 * 60
+          if stale_updated < cp_started.to_i - 10 * 60
             log.warn \
               event: 'watch statting stale',
               last_statted: stale_updated
@@ -75,17 +76,26 @@ module Franz
             stale_updated = Time.now.to_i
           end
 
-          watch(skip_stale).each do |deleted|
+          deletions = watch(skip_stale)
+          cp_watched = Time.now
+
+          deletions.each do |deleted|
             @stats.delete deleted
             deletions.push deleted
           end
-          elapsed1 = Time.now - started
+          cp_handled_deletions = Time.now
+
+          elapsed_total = cp_handled_deletions - cp_started
+          elapsed_handling_deletions = cp_handled_deletions - cp_watched
+          elapsed_in_watch = cp_watched - cp_handled_discoveries
+          elapsed_handling_discoveries = cp_handled_discoveries - cp_started
 
           log.debug \
             event: 'watch finished',
-            elapsed: elapsed1,
-            elapsed_discovering: elapsed2,
-            elapsed_watching: (elapsed1 - elapsed2),
+            elapsed_total: elapsed_total,
+            elapsed_handling_discoveries: elapsed_handling_discoveries,
+            elapsed_in_watch: elapsed_in_watch,
+            elapsed_handling_deletions: elapsed_handling_deletions,
             discoveries_size_before: discoveries_size,
             discoveries_size_after: discoveries.size,
             deletions_size_before: deletions_size,
@@ -94,7 +104,8 @@ module Franz
             watch_events_size_after: watch_events.size,
             stats_size_before: stats_size,
             stats_size_after: stats.keys.size,
-            skipped: @num_skipped
+            skipped: @num_skipped,
+            cursors: @cursors
 
           sleep watch_interval
         end
@@ -140,11 +151,11 @@ module Franz
 
     def watch skip_stale=true
       deleted = []
-      started1 = Time.now
       keys = stats.keys
       size = keys.size
       i = 0
 
+      cp_started_watch = Time.now
       fifteen_minutes_ago = Time.now - 15 * 60
       @num_skipped = 0
 
@@ -160,9 +171,10 @@ module Franz
           next
         end
 
-        started2 = Time.now
+        cp_started_stat = Time.now
         stat = stat_for path
         stats[path] = stat
+        cp_statted = Time.now
 
         if file_created? old_stat, stat
           enqueue :created, path
@@ -178,15 +190,19 @@ module Franz
         elsif file_truncated? old_stat, stat
           enqueue :truncated, path, stat[:size]
         end
+        cp_enqueued = Time.now
 
-        now = Time.now
-        elapsed1 = now - started1
-        elapsed2 = now - started2
+        elapsed_total = cp_enqueued - cp_started_watch
+        elapsed_statting = cp_enqueued - cp_started_stat
+        elapsed_in_enqueue = cp_enqueued - cp_statted
+        elapsed_in_stat = cp_statted - cp_started_stat
 
         log.trace \
           event: 'watch stat finished',
-          elapsed: elapsed2,
-          elapsed_in_watch: elapsed1,
+          elapsed_total: elapsed_total,
+          elapsed_statting: elapsed_statting,
+          elapsed_in_stat: elapsed_in_stat,
+          elapsed_in_enqueue: elapsed_in_enqueue,
           stat_num: i,
           stat_size: size,
           watch_size: watch_events.size,

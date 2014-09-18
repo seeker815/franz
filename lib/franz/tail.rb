@@ -26,20 +26,25 @@ module Franz
 
       @tail_thread = Thread.new do
         until @stop
-          started = Time.now
           n = watch_events.size
           m = tail_events.size
+          cp_started = Time.now
+
           e = watch_events.shift
-          elapsed2 = Time.now - started
+          cp_deqeueued = Time.now
 
           handle(e)
-          elapsed1 = Time.now - started
+          cp_handled = Time.now
+
+          elapsed_total = cp_handled - cp_started
+          elapsed_in_handle = cp_handled - cp_deqeueued
+          elapsed_in_dequeue = cp_deqeueued - cp_started
 
           log.trace \
             event: 'tail finished',
-            elapsed: elapsed1,
-            elapsed_waiting_on_watch: elapsed2,
-            elapsed_handling_event: (elapsed1 - elapsed2),
+            elapsed_total: elapsed_total,
+            elapsed_in_dequeue: elapsed_in_dequeue,
+            elapsed_in_handle: elapsed_in_handle,
             watch_events_size_before: n,
             watch_events_size_after: watch_events.size,
             tail_events_size_before: m,
@@ -83,7 +88,6 @@ module Franz
       started = Time.now
       start_pos = @cursors[path]
 
-      raise if size.nil?
       loop do
         break if @cursors[path] >= size
 
