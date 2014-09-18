@@ -33,7 +33,7 @@ module Franz
           e = watch_events.shift
           cp_deqeueued = Time.now
 
-          handle(e)
+          path = handle(e)
           cp_handled = Time.now
 
           elapsed_total = cp_handled - cp_started
@@ -42,6 +42,7 @@ module Franz
 
           log.trace \
             event: 'tail finished',
+            path: path,
             elapsed_total: elapsed_total,
             elapsed_in_dequeue: elapsed_in_dequeue,
             elapsed_in_handle: elapsed_in_handle,
@@ -83,61 +84,23 @@ module Franz
 
     def read path, size
       @cursors[path] ||= 0
-      watch_events_size = watch_events.size
-      tail_events_size = tail_events.size
-      started = Time.now
-      start_pos = @cursors[path]
-
       loop do
         break if @cursors[path] >= size
 
         begin
-          pos = @cursors[path]
           data = IO::read path, @block_size, @cursors[path]
-          @cursors[path] += data.bytesize
-          num_lines = 0
           buffer[path].extract(data).each do |line|
             tail_events.push path: path, line: line
-            num_lines += 1
           end
-          diff = @cursors[path] - pos
-          diff_start = @cursors[path] - start_pos
-          elapsed = Time.now - started
-          log.trace \
-            event: 'tail capture finished',
-            path: path,
-            size: size,
-            cursor: @cursors[path],
-            diff: diff,
-            diff_start: diff_start,
-            elapsed: elapsed,
-            watch_size: watch_events.size,
-            tail_size: tail_events.size
+          @cursors[path] += data.bytesize
         rescue EOFError, Errno::ENOENT, NoMethodError
           # we're done here
         end
       end
-
-      diff = @cursors[path] - start_pos
-      elapsed = Time.now - started
-      log.trace \
-        event: 'tail read finished',
-        path: path,
-        size: size,
-        cursor: @cursors[path],
-        diff: diff,
-        elapsed: elapsed,
-        watch_events_size_before: watch_events_size,
-        watch_events_size_after: watch_events.size,
-        tail_events_size_before: tail_events_size,
-        tail_events_size_after: tail_events.size
     end
 
     def close path
       @cursors.delete(path)
-      log.trace \
-        event: 'tail closed',
-        path: path
     end
 
     def handle event
@@ -156,6 +119,7 @@ module Franz
       else
         raise 'invalid event'
       end
+      return event[:path]
     end
   end
 end

@@ -38,6 +38,8 @@ module Franz
       @buffer = Franz::Sash.new
       @stop   = false
 
+      @num_events = 0
+
       @t1 = Thread.new do
         until @stop
           flush
@@ -119,12 +121,8 @@ module Franz
       return if t.nil?
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
-      log.trace \
-        event: 'agg enqueue',
-        path: path,
-        type: t,
-        seq: s
       agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
+      @num_events += 1
     end
 
     def capture
@@ -136,18 +134,18 @@ module Franz
       event = tail_events.shift
       cp_dequeued = Time.now
 
-      log.trace \
-        event: 'agg capture',
-        path: event[:path]
       multiline = config(event[:path])[:multiline] rescue nil
+      enqueued = false
       if multiline.nil?
         enqueue event[:path], event[:line] unless event[:line].empty?
+        enqueued = true
       else
         lock[event[:path]].synchronize do
           if event[:line] =~ multiline
             buffered = buffer.flush(event[:path])
             lines    = buffered.map { |e| e[:line] }.join("\n")
             enqueue event[:path], lines unless lines.empty?
+            enqueued = true
           end
           buffer.insert event[:path], event
         end
@@ -159,6 +157,8 @@ module Franz
       elapsed_in_capture = cp_captured - cp_dequeued
       log.trace \
         event: 'agg finished',
+        path: event[:path],
+        enqueued: enqueued,
         elapsed_total: elapsed_total,
         elapsed_in_dequeue: elapsed_in_dequeue,
         elapsed_in_capture: elapsed_in_capture,
@@ -167,7 +167,8 @@ module Franz
         tail_events_size_after: tail_events.size,
         agg_events_size_after: agg_events.size,
         buffer_size_before: buffer_size,
-        buffer_size_after: buffer.keys.size
+        buffer_size_after: buffer.keys.size,
+        num_events: @num_events
     end
 
     def flush force=false
@@ -189,7 +190,7 @@ module Franz
         end
       end
       elapsed = Time.now - started
-      log.trace \
+      log.debug \
         event: 'agg flush finished',
         elasped: elapsed,
         tail_events_size_before: tail_events_size,

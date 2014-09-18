@@ -27,7 +27,7 @@ class TestPerformance < MiniTest::Test
     @tail_events  = Queue.new
     @agg_events   = Queue.new
     @logger       = Logger.new STDERR
-    @logger.level = Logger::DEBUG
+    @logger.level = Logger::WARN
 
     FileUtils.rm_rf @tmpdir
     FileUtils.mkdir_p @tmpdir
@@ -38,10 +38,9 @@ class TestPerformance < MiniTest::Test
   end
 
   def test_handles_too_many_files_for_ulimit
-    skip
     sample = "Why, hello there, World! How lovely to see you this morning."
     num_files = @ulimit * 2
-    num_lines_per_file = 1_000
+    num_lines_per_file = 100
 
     paths = []
     num_files.times do |i|
@@ -54,16 +53,19 @@ class TestPerformance < MiniTest::Test
       paths << path
     end
 
-    $stderr.puts 'started agg'
+    num_events = num_files * num_lines_per_file
+
     start_agg
     started = Time.now
-    until @agg_events.size == num_files * num_lines_per_file
+    until @agg_events.size == num_events
       sleep 1
     end
     seqs = stop_agg
     elapsed = Time.now - started
 
-    @logger.debug('%ds elapsed' % elapsed)
+    @logger.fatal('%ds elapsed' % elapsed)
+    @logger.fatal('%d events' % num_events)
+    @logger.fatal('%f events/s' % ( (1.0 * num_events) / (1.0 * elapsed) ))
     assert_equal(paths.size, seqs.keys.size)
     assert_equal(paths.size * num_lines_per_file, @agg_events.size)
   end
@@ -82,7 +84,7 @@ private
   def start_agg opts={}
     configs = [{
       type: :test,
-      includes: [ "#{@tmpdir}/*.log", "#{realpath @tmpdir}/*.log" ],
+      includes: [ "#{@tmpdir}/*.log" ],
       excludes: [ "#{@tmpdir}/exclude*" ]
     }]
 

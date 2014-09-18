@@ -28,30 +28,8 @@ module Franz
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 
       @num_skipped = 0
-      # # Make sure we're up-to-date
-      # stats.keys.each do |path|
-      #   begin
-      #     stat   = File.stat(path)
-      #     size   = stat.size
-      #     cursor = opts[:full_state][path][:cursor]
-      #     if cursor.nil?
-      #       # nop
-      #     elsif size < cursor
-      #       enqueue name: :truncated, path: path, size: size
-      #     elsif size > cursor
-      #       enqueue name: :appended, path: path, size: size
-      #     end
-      #   rescue KeyError
-      #     log.error 'Erm, shouldna got here'
-      #   rescue Errno::ENOENT
-      #     @stats.delete(path)
-      #     enqueue :deleted, path
-      #     deleted << path
-      #   end
-      # end
 
       @stop = false
-
       @thread = Thread.new do
         stale_updated = 0
 
@@ -104,8 +82,7 @@ module Franz
             watch_events_size_after: watch_events.size,
             stats_size_before: stats_size,
             stats_size_after: stats.keys.size,
-            skipped: @num_skipped,
-            cursors: @cursors
+            skipped: @num_skipped
 
           sleep watch_interval
         end
@@ -142,11 +119,6 @@ module Franz
 
     def enqueue name, path, size=nil
       watch_events.push name: name, path: path, size: size
-      log.trace \
-        event: 'watch enqueued',
-        name: name,
-        path: path,
-        size: size
     end
 
     def watch skip_stale=true
@@ -177,7 +149,7 @@ module Franz
         cp_statted = Time.now
 
         if file_created? old_stat, stat
-          enqueue :created, path
+          # enqueue :created, path
         elsif file_deleted? old_stat, stat
           enqueue :deleted, path
           deleted << path
@@ -199,6 +171,7 @@ module Franz
 
         log.trace \
           event: 'watch stat finished',
+          path: path,
           elapsed_total: elapsed_total,
           elapsed_statting: elapsed_statting,
           elapsed_in_stat: elapsed_in_stat,

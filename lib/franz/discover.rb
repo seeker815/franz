@@ -31,6 +31,7 @@ class Franz::Discover
       config
     end
 
+
     @stop = false
 
     @thread = Thread.new do
@@ -43,7 +44,7 @@ class Franz::Discover
         until deletions.empty?
           d = deletions.pop
           @known.delete d
-          log.trace \
+          log.debug \
             event: 'discover deleted',
             path: d
         end
@@ -55,7 +56,7 @@ class Franz::Discover
         discovered.each do |discovery|
           discoveries.push discovery
           @known.push discovery
-          log.trace \
+          log.debug \
             event: 'discover discovered',
             path: discovery
         end
@@ -117,10 +118,10 @@ private
     configs.each do |config|
       config[:includes].each do |glob|
         expand(glob).each do |path|
+          next if known.include? path
           next if config[:excludes].any? { |exclude|
             File.fnmatch? exclude, File::basename(path)
           }
-          next if known.include? path
           next unless File.file? path
           next if File.mtime(path).to_i <= @ignore_before
           discovered.push path
