@@ -1,4 +1,5 @@
 require 'logger'
+require 'shellwords'
 
 
 # Discover performs half of file existence detection by expanding globs and
@@ -137,7 +138,10 @@ private
     files = []
     Dir.glob(dir_glob).each do |dir|
       next unless File::directory?(dir)
-      Dir.entries(dir).each do |fname|
+      entries = `find #{Shellwords.escape(dir)} -maxdepth 1 -type f 2>/dev/null`.lines.map do |e|
+        File::basename(e.strip)
+      end
+      entries.each do |fname|
         next if fname == '.' || fname == '..'
         next unless File.fnmatch?(file_glob, fname)
         files << File.join(dir, fname)

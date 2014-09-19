@@ -26,7 +26,7 @@ class TestFranzDiscover < MiniTest::Test
   def test_discovers_existing_file
     tmp = tempfile %w[ test1 .log ]
     start_discovery known: []
-    sleep 0.001 # Time to discover
+    sleep 2 # Time to discover
     known = stop_discovery
     assert known.include?(tmp.path)
   end
@@ -54,7 +54,7 @@ class TestFranzDiscover < MiniTest::Test
     delete tmp.path
     # tmp never exists as far as Discover is aware
     start_discovery known: []
-    sleep 0.001
+    sleep 2
     known = stop_discovery
     assert !known.include?(tmp.path)
   end
