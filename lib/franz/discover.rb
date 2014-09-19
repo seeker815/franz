@@ -1,3 +1,4 @@
+require 'set'
 require 'logger'
 require 'shellwords'
 
@@ -25,6 +26,8 @@ class Franz::Discover
     @ignore_before     = opts[:ignore_before]     || 0
     @known             = opts[:known]             || []
     @logger            = opts[:logger]            || Logger.new(STDOUT)
+
+    @known = Set.new(@known)
 
     @configs = configs.map do |config|
       config[:includes] ||= []
@@ -56,7 +59,7 @@ class Franz::Discover
 
         discovered.each do |discovery|
           discoveries.push discovery
-          @known.push discovery
+          @known.add discovery
           log.debug \
             event: 'discover discovered',
             path: discovery
@@ -106,7 +109,7 @@ class Franz::Discover
 
   # Return the internal "known" state
   def state
-    return @known.dup
+    return @known.to_a
   end
 
 private
@@ -124,7 +127,7 @@ private
             File.fnmatch? exclude, File::basename(path)
           }
           next unless File.file? path
-          next if File.mtime(path).to_i <= @ignore_before
+          # next if File.mtime(path).to_i <= @ignore_before
           discovered.push path
         end
       end
@@ -136,7 +139,7 @@ private
     dir_glob = File.dirname(glob)
     file_glob = File.basename(glob)
     files = []
-    Dir.glob(dir_glob).each do |dir|
+    Dir[dir_glob].each do |dir|
       next unless File::directory?(dir)
       entries = `find #{Shellwords.escape(dir)} -maxdepth 1 -type f 2>/dev/null`.lines.map do |e|
         File::basename(e.strip)
