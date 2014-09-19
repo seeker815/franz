@@ -96,7 +96,7 @@ module Franz
         end
       end
 
-      log.info \
+      log.debug \
         event: 'output started',
         foreground: @foreground
 
@@ -115,7 +115,7 @@ module Franz
       return if @foreground
       @foreground = true
       @thread.kill
-      log.info event: 'output stopped'
+      log.debug event: 'output stopped'
     end
 
   private

@@ -87,7 +87,7 @@ class Franz::Discover
       end
     end
 
-    log.info \
+    log.debug \
       event: 'discover started',
       configs: configs,
       discoveries: discoveries,
@@ -103,7 +103,7 @@ class Franz::Discover
     return state if @stop
     @stop = true
     @thread.kill
-    log.info event: 'discover stopped'
+    log.debug event: 'discover stopped'
     return state
   end
 

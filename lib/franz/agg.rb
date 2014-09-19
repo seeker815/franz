@@ -52,7 +52,7 @@ module Franz
         capture until @stop
       end
 
-      log.info \
+      log.debug \
         event: 'agg started',
         configs: @configs,
         tail_events: @tail_events,
@@ -67,7 +67,7 @@ module Franz
       @stop = true
       @t2.kill
       @t1.join
-      log.info event: 'agg stopped'
+      log.debug event: 'agg stopped'
       return state
     end
 
@@ -190,7 +190,7 @@ module Franz
         end
       end
       elapsed = Time.now - started
-      log.debug \
+      log.trace \
         event: 'agg flush finished',
         elasped: elapsed,
         tail_events_size_before: tail_events_size,

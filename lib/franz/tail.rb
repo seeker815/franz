@@ -53,7 +53,7 @@ module Franz
         end
       end
 
-      log.info \
+      log.debug \
         event: 'tail started',
         watch_events: watch_events,
         tail_events: tail_events,
@@ -68,7 +68,7 @@ module Franz
       @stop = true
       @watch_thread.kill rescue nil
       @tail_thread.kill  rescue nil
-      log.info event: 'tail stopped'
+      log.debug event: 'tail stopped'
       return state
     end
 

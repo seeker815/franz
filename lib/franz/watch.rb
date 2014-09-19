@@ -68,7 +68,7 @@ module Franz
           elapsed_in_watch = cp_watched - cp_handled_discoveries
           elapsed_handling_discoveries = cp_handled_discoveries - cp_started
 
-          log.debug \
+          log.trace \
             event: 'watch finished',
             elapsed_total: elapsed_total,
             elapsed_handling_discoveries: elapsed_handling_discoveries,
@@ -88,7 +88,7 @@ module Franz
         end
       end
 
-      log.info \
+      log.debug \
         event: 'watch started',
         discoveries: discoveries,
         deletions: deletions,
@@ -103,7 +103,7 @@ module Franz
       return state if @stop
       @stop = true
       @thread.kill
-      log.info event: 'watch stopped'
+      log.debug event: 'watch stopped'
       return state
     end
 
