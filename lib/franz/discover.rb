@@ -132,18 +132,17 @@ private
   end
 
   def expand glob
-    Dir[glob]
-    # dir_glob = File.dirname(glob)
-    # file_glob = File.basename(glob)
-    # files = []
-    # Dir.glob(dir_glob).each do |dir|
-    #   next unless File::directory?(dir)
-    #   Dir.foreach(dir) do |fname|
-    #     next if fname == '.' || fname == '..'
-    #     next unless File.fnmatch?(file_glob, fname)
-    #     files << File.join(dir, fname)
-    #   end
-    # end
-    # files
+    dir_glob = File.dirname(glob)
+    file_glob = File.basename(glob)
+    files = []
+    Dir.glob(dir_glob).each do |dir|
+      next unless File::directory?(dir)
+      Dir.entries(dir).each do |fname|
+        next if fname == '.' || fname == '..'
+        next unless File.fnmatch?(file_glob, fname)
+        files << File.join(dir, fname)
+      end
+    end
+    files
   end
 end
