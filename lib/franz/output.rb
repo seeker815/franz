@@ -52,13 +52,8 @@ module Franz
 
       @thread = Thread.new do
         rand = Random.new
-        n = 0
         until @stop
-          input_size = opts[:input].size
-          started = Time.now
-
           event = opts[:input].shift
-          elapsed3 = Time.now - started
 
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/rel', '')
           event[:path] = event[:path].sub('/home/denimuser/seam-builds/live', '')
@@ -75,24 +70,11 @@ module Franz
           event[:path] = event[:path].sub('/home/denimuser/rivet/bjn/logs', '')
           event[:path] = event[:path].sub('/home/denimuser', '')
           event[:path] = event[:path].sub('/var/log', '')
-          elapsed2 = Time.now - started
 
           exchange.publish \
             JSON::generate(event),
             routing_key: rand.rand(10_000),
             persistent: false
-          elapsed1 = Time.now - started
-
-          n += 1
-          log.trace \
-            event: 'output finished',
-            elapsed: elapsed1,
-            elapsed_waiting_on_agg: elapsed3,
-            elapsed_cleaning_event: (elapsed2 - elapsed3),
-            elapsed_publishing_event: (elapsed1 - elapsed2),
-            agg_events_size_before: input_size,
-            agg_events_size_after: opts[:input].size,
-            published: n
         end
       end
 

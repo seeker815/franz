@@ -25,32 +25,7 @@ module Franz
       @stop   = false
 
       @tail_thread = Thread.new do
-        until @stop
-          n = watch_events.size
-          m = tail_events.size
-          cp_started = Time.now
-
-          e = watch_events.shift
-          cp_deqeueued = Time.now
-
-          path = handle(e)
-          cp_handled = Time.now
-
-          elapsed_total = cp_handled - cp_started
-          elapsed_in_handle = cp_handled - cp_deqeueued
-          elapsed_in_dequeue = cp_deqeueued - cp_started
-
-          log.trace \
-            event: 'tail finished',
-            path: path,
-            elapsed_total: elapsed_total,
-            elapsed_in_dequeue: elapsed_in_dequeue,
-            elapsed_in_handle: elapsed_in_handle,
-            watch_events_size_before: n,
-            watch_events_size_after: watch_events.size,
-            tail_events_size_before: m,
-            tail_events_size_after: tail_events.size
-        end
+        handle(watch_events.shift) until @stop
       end
 
       log.debug \

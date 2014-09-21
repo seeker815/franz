@@ -76,8 +76,8 @@ module Franz
         stats[path]   = state[path]
       end
 
-      discoveries  = Queue.new # SizedQueue.new opts[:input][:discover_bound]
-      deletions    = Queue.new # SizedQueue.new opts[:input][:discover_bound]
+      discoveries  = SizedQueue.new opts[:input][:discover_bound]
+      deletions    = SizedQueue.new opts[:input][:discover_bound]
       watch_events = SizedQueue.new opts[:input][:watch_bound]
       tail_events  = SizedQueue.new opts[:input][:tail_bound]
 

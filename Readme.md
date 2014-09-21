@@ -34,13 +34,13 @@ But it's not yet officially sanctioned. Such is life. At any rate, you don't
 have to deal with this issue in Franz, he flushes inactive buffers after a time.
 Easy-peasy, lemon-squeezy.
 
-### File Handle Eviction
+### File Hande-ing
 
 Now I'm not actually sure this issue affects logstash proper, but it's one you
 might face if you decide to write your own, so here goes: If you're tailing a
 bunch of files and you never let go of their file handles, you might very well
 exhaust your ulimit after running for a while. Because Franz is designed to be
-a daemon, he releases or "evicts" file handles after a period of inactivity.
+a daemon, he only opens file handles when necessary.
 
 ### Sequential Identifiers
 

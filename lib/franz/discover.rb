@@ -40,11 +40,6 @@ class Franz::Discover
 
     @thread = Thread.new do
       until @stop
-        known_size = @known.size
-        discoveries_size = discoveries.size
-        deletions_size = deletions.size
-        cp_started = Time.now
-
         until deletions.empty?
           d = deletions.pop
           @known.delete d
@@ -52,37 +47,14 @@ class Franz::Discover
             event: 'discover deleted',
             path: d
         end
-        cp_handled_deletes = Time.now
 
-        discovered = discover
-        cp_discovered = Time.now
-
-        discovered.each do |discovery|
+        discover.each do |discovery|
           discoveries.push discovery
           @known.add discovery
           log.debug \
             event: 'discover discovered',
             path: discovery
         end
-        cp_handled_discoveries = Time.now
-
-        elapsed_total = cp_handled_discoveries - cp_started
-        elapsed_handling_discoveries = cp_handled_discoveries - cp_discovered
-        elapsed_in_discovery = cp_discovered - cp_handled_deletes
-        elapsed_handling_deletes = cp_handled_deletes - cp_started
-
-        log.debug \
-          event: 'discover finished',
-          elapsed_total: elapsed_total,
-          elapsed_handling_deletes: elapsed_handling_deletes,
-          elapsed_in_discovery: elapsed_in_discovery,
-          elapsed_handling_discoveries: elapsed_handling_discoveries,
-          known_size_before: known_size,
-          known_size_after: @known.size,
-          discoveries_size_before: discoveries_size,
-          discoveries_size_after: discoveries.size,
-          deletions_size_before: deletions_size,
-          deletions_size_after: deletions.size
         sleep discover_interval
       end
     end
@@ -121,35 +93,16 @@ private
     discovered = []
     configs.each do |config|
       config[:includes].each do |glob|
-        expand(glob).each do |path|
+        Dir[glob].each do |path|
           next if known.include? path
           next if config[:excludes].any? { |exclude|
             File.fnmatch? exclude, File::basename(path)
           }
           next unless File.file? path
-          # next if File.mtime(path).to_i <= @ignore_before
           discovered.push path
         end
       end
     end
     return discovered
-  end
-
-  def expand glob
-    dir_glob = File.dirname(glob)
-    file_glob = File.basename(glob)
-    files = []
-    Dir[dir_glob].each do |dir|
-      next unless File::directory?(dir)
-      entries = `find #{Shellwords.escape(dir)} -maxdepth 1 -type f 2>/dev/null`.lines.map do |e|
-        File::basename(e.strip)
-      end
-      entries.each do |fname|
-        next if fname == '.' || fname == '..'
-        next unless File.fnmatch?(file_glob, fname)
-        files << File.join(dir, fname)
-      end
-    end
-    files
   end
 end
