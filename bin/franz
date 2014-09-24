@@ -63,4 +63,4 @@ Franz::Input.new \
   checkpoint: config[:checkpoint],
   checkpoint_interval: config[:checkpoint_interval]
 
-fout.join
+fout.join # Block so Franz doesn't just exit

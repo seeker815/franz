@@ -90,6 +90,7 @@ private
   def log ; @logger end
 
   def discover
+    log.trace event: 'discover'
     discovered = []
     configs.each do |config|
       config[:includes].each do |glob|
@@ -98,7 +99,6 @@ private
           next if config[:excludes].any? { |exclude|
             File.fnmatch? exclude, File::basename(path)
           }
-          next unless File.file? path
           discovered.push path
         end
       end
