@@ -63,13 +63,4 @@ Franz::Input.new \
   checkpoint: config[:checkpoint],
   checkpoint_interval: config[:checkpoint_interval]
 
-# INF-5108: Periodically request garbage collection, as Ruby 2.1 GC doesn't
-#           always work well for our workload. Their algorithm relies more on
-#           the number of objects rather than memory usage to drive a kind of
-#           mark-and-sweep collection. We don't keep many objects around, but
-#           they can be very large in the case of, e.g., multiline logs.
-gc_interval = config[:gc_interval] || 300
-loop do
-  sleep gc_interval
-  GC.start
-end
+fout.join
