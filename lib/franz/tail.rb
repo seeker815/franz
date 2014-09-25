@@ -22,7 +22,7 @@ module Franz
       @cursors    = opts[:cursors]     || Hash.new
       @logger     = opts[:logger]      || Logger.new(STDOUT)
 
-      @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
+      @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new("\n", @line_limit) }
       @stop   = false
 
       @tail_thread = Thread.new do
@@ -72,11 +72,14 @@ module Franz
           buffer[path].extract(data).each do |line|
             size = line.bytesize
             if size > @line_limit
-              log.warn \
-                event: 'line overflow',
+              log.fatal \
+                event: 'killed',
+                reason: 'line overflow',
                 path: path,
                 size: size,
-                limit: @line_limit
+                limit: @line_limit,
+                pid: $$
+              exit(2)
             end
             tail_events.push path: path, line: line
           end
@@ -89,7 +92,7 @@ module Franz
 
     def close path
       log.trace event: 'close', path: path
-      @cursors.delete(path)
+      @cursors[path] = 0
     end
 
     def handle event

@@ -39,6 +39,7 @@ module Franz
           flush_interval: nil,
           buffer_limit: nil,
           line_limit: nil,
+          play_catchup?: nil,
           configs: []
         }
       }.deep_merge!(opts)
@@ -98,6 +99,7 @@ module Franz
         deletions: deletions,
         watch_events: watch_events,
         watch_interval: opts[:input][:watch_interval],
+        play_catchup?: opts[:input][:play_catchup?],
         logger: opts[:logger],
         stats: stats,
         full_state: full_state

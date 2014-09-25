@@ -77,11 +77,13 @@ loop do
       event: 'killed',
       reason: 'Consuming too much memory',
       used: mem_used,
-      limit: mem_limit
+      limit: mem_limit,
+      pid: $$
     exit(1)
   end
   logger.debug \
     event: 'memcheck',
     used: mem_used,
-    limit: mem_limit
+    limit: mem_limit,
+    pid: $$
 end

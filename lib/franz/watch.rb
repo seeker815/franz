@@ -23,6 +23,7 @@ module Franz
       @deletions    = opts[:deletions]    || []
       @watch_events = opts[:watch_events] || []
 
+      @play_catchup   = opts[:play_catchup?]  || true
       @watch_interval = opts[:watch_interval] || 10
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
@@ -33,7 +34,7 @@ module Franz
       # Make sure we're up-to-date by rewinding our old stats to our cursors
       stats.keys.each do |path|
         stats[path][:size] = opts[:full_state][path][:cursor] || 0
-      end
+      end if @play_catchup
 
       @stop = false
       @thread = Thread.new do
@@ -101,11 +102,11 @@ module Franz
       skip_past = Time.now - @skip_interval
 
       stats.keys.each do |path|
-        old_stat = stats[path]
-
         # Hacks for logs we've removed
         next if File.basename(path) =~ /^rtpstat/
         next if File.basename(path) == 'zuora.log'
+
+        old_stat = stats[path]
 
         next if skip_stale \
         && old_stat \
