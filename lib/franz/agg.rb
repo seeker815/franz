@@ -29,6 +29,7 @@ module Franz
       @tail_events = opts[:tail_events] || []
       @agg_events  = opts[:agg_events]  || []
 
+      @buffer_limit   = opts[:buffer_limit]   || 50
       @flush_interval = opts[:flush_interval] || 10
       @seqs           = opts[:seqs]           || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
@@ -144,6 +145,14 @@ module Franz
         enqueue event[:path], event[:line] unless event[:line].empty?
       else
         lock[event[:path]].synchronize do
+          size = buffer.size(event[:path])
+          if size > @buffer_limit
+            log.warn \
+              event: 'buffer overflow',
+              path: event[:path],
+              size: size,
+              limmit: @buffer_limit
+          end
           if event[:line] =~ multiline
             buffered = buffer.flush(event[:path])
             lines    = buffered.map { |e| e[:line] }.join("\n")

@@ -21,6 +21,7 @@ module Franz
       @mutex = Mutex.new
       @mtime = Hash.new { |default, key| default[key] = nil }
       @hash  = Hash.new { |default, key| default[key] = []  }
+      @size  = Hash.new { |default, key| default[key] = 0   }
     end
 
     # Grab a list of known keys.
@@ -37,6 +38,7 @@ module Franz
     def insert key, value
       @mutex.synchronize do
         @hash[key] << value
+        @size[key] += 1
         @mtime[key] = Time.now
       end
       return value
@@ -54,7 +56,10 @@ module Franz
     # @param [Object] key
     #
     # @return [Array<Object>]
-    def remove key ; @hash.delete(key) end
+    def remove key
+      @size[key] -= 1
+      @hash.delete(key)
+    end
 
     # Return the last time the key's value buffer was modified.
     #
@@ -73,9 +78,19 @@ module Franz
       @mutex.synchronize do
         value       = @hash[key]
         @hash[key]  = []
+        @size[key]  = 0
         @mtime[key] = Time.now
       end
       return value
+    end
+
+    # Return the size of a key's value buffer.
+    #
+    # @param [Object] key
+    #
+    # @return [Integer]
+    def size key
+      @size[key]
     end
   end
 end

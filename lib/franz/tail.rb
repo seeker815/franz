@@ -17,9 +17,10 @@ module Franz
       @watch_events = opts[:watch_events] || []
       @tail_events  = opts[:tail_events]  || []
 
-      @block_size  = opts[:block_size]  || 32_768 # 32 KiB
-      @cursors     = opts[:cursors]     || Hash.new
-      @logger      = opts[:logger]      || Logger.new(STDOUT)
+      @line_limit = opts[:line_limit]  || 10_240 # 10 KiB
+      @block_size = opts[:block_size]  || 32_768 # 32 KiB
+      @cursors    = opts[:cursors]     || Hash.new
+      @logger     = opts[:logger]      || Logger.new(STDOUT)
 
       @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new }
       @stop   = false
@@ -69,6 +70,14 @@ module Franz
         begin
           data = IO::read path, @block_size, @cursors[path]
           buffer[path].extract(data).each do |line|
+            size = line.bytesize
+            if size > @line_limit
+              log.warn \
+                event: 'line overflow',
+                path: path,
+                size: size,
+                limit: @line_limit
+            end
             tail_events.push path: path, line: line
           end
           @cursors[path] += data.bytesize
