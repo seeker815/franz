@@ -71,10 +71,17 @@ mem_sleep = config[:memory_limit_interval] || 60
 
 loop do
   sleep mem_sleep
-  if mem_kb > mem_limit
+  mem_used = mem_kb
+  if mem_used > mem_limit
     logger.fatal \
       event: 'killed',
-      reason: 'Consuming too much memory'
+      reason: 'Consuming too much memory',
+      used: mem_used,
+      limit: mem_limit
     exit(1)
   end
+  logger.debug \
+    event: 'memcheck',
+    used: mem_used,
+    limit: mem_limit
 end
