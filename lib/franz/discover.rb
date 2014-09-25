@@ -90,7 +90,7 @@ private
   def log ; @logger end
 
   def discover
-    log.trace event: 'discover'
+    log.debug event: 'discover'
     discovered = []
     configs.each do |config|
       config[:includes].each do |glob|

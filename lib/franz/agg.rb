@@ -100,7 +100,7 @@ module Franz
           end
         end
         log.warn \
-          event: 'agg type() failed',
+          event: 'type unknown',
           path: path
         @types[path] = nil
         return nil
@@ -155,7 +155,7 @@ module Franz
     end
 
     def flush force=false, started=Time.now
-      log.trace \
+      log.debug \
         event: 'flush',
         force: force,
         started: started

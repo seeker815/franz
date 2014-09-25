@@ -30,6 +30,11 @@ module Franz
       @num_skipped = 0
       @skip_interval = 15 * 60 # 15 minutes
 
+      # Make sure we're up-to-date by rewinding our old stats to our cursors
+      stats.keys.each do |path|
+        stats[path][:size] = opts[:full_state][path][:cursor] || 0
+      end
+
       @stop = false
       @thread = Thread.new do
         stale_updated = Time.now - 2 * @skip_interval
@@ -42,9 +47,6 @@ module Franz
 
           skip_stale = true
           if stale_updated < started - @skip_interval
-            log.debug \
-              event: 'watch statting stale',
-              last_statted: stale_updated
             skip_stale = false
             stale_updated = Time.now
           end
@@ -92,6 +94,9 @@ module Franz
     end
 
     def watch skip_stale=true
+      log.debug \
+        event: 'watch',
+        skip_stale: skip_stale
       deleted = []
       skip_past = Time.now - @skip_interval
 
