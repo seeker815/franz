@@ -37,6 +37,8 @@ module Franz
           watch_interval: nil,
           eviction_interval: nil,
           flush_interval: nil,
+          buffer_limit: nil,
+          line_limit: nil,
           configs: []
         }
       }.deep_merge!(opts)
@@ -104,6 +106,7 @@ module Franz
         watch_events: watch_events,
         tail_events: tail_events,
         block_size: opts[:input][:block_size],
+        line_limit: opts[:input][:line_limit],
         logger: opts[:logger],
         cursors: cursors,
         full_state: full_state
@@ -113,6 +116,7 @@ module Franz
         tail_events: tail_events,
         agg_events: opts[:output],
         flush_interval: opts[:input][:flush_interval],
+        buffer_limit: opts[:input][:buffer_limit],
         logger: opts[:logger],
         seqs: seqs,
         full_state: full_state
