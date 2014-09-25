@@ -103,6 +103,10 @@ module Franz
       stats.keys.each do |path|
         old_stat = stats[path]
 
+        # Hacks for logs we've removed
+        next if File.basename(path) =~ /^rtpstat/
+        next if File.basename(path) == 'zuora.log'
+
         next if skip_stale \
         && old_stat \
         && old_stat[:mtime] \
