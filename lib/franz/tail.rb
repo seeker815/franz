@@ -59,10 +59,10 @@ module Franz
     def log ; @logger end
 
     def read path, size
-      # log.trace \
-      #   event: 'read',
-      #   path: path,
-      #   size: size
+      log.trace \
+        event: 'read',
+        path: path,
+        size: size
       @cursors[path] ||= 0
       loop do
         break if @cursors[path] >= size
@@ -91,14 +91,14 @@ module Franz
     end
 
     def close path
-      # log.trace event: 'close', path: path
+      log.trace event: 'close', path: path
       @cursors[path] = 0
     end
 
     def handle event
-      # log.trace \
-      #   event: 'handle',
-      #   raw: event
+      log.trace \
+        event: 'handle',
+        raw: event
       case event[:name]
       when :created
       when :replaced

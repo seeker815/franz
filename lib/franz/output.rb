@@ -71,9 +71,9 @@ module Franz
           event[:path] = event[:path].sub('/home/denimuser', '')
           event[:path] = event[:path].sub('/var/log', '')
 
-          # log.trace \
-          #   event: 'publish',
-          #   raw: event
+          log.trace \
+            event: 'publish',
+            raw: event
 
           exchange.publish \
             JSON::generate(event),
