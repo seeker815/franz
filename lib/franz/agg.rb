@@ -120,16 +120,16 @@ module Franz
     def enqueue path, message
       t = type path
       if t.nil?
-        log.trace \
-          event: 'enqueue skipped',
-          path: path,
-          message: message
+        # log.trace \
+        #   event: 'enqueue skipped',
+        #   path: path,
+        #   message: message
         return
       end
-      log.trace \
-        event: 'enqueue',
-        path: path,
-        message: message
+      # log.trace \
+      #   event: 'enqueue',
+      #   path: path,
+      #   message: message
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
       agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
@@ -137,9 +137,9 @@ module Franz
 
     def capture
       event = tail_events.shift
-      log.trace \
-        event: 'capture',
-        raw: event
+      # log.trace \
+      #   event: 'capture',
+      #   raw: event
       multiline = config(event[:path])[:multiline] rescue nil
       if multiline.nil?
         enqueue event[:path], event[:line] unless event[:line].empty?
