@@ -1,7 +1,7 @@
 require 'thread'
 require 'logger'
 
-require 'buftok'
+require 'eventmachine'
 
 module Franz
 
