@@ -117,7 +117,26 @@ module Franz
       seqs[path] = seqs.fetch(path, 0) + 1
     end
 
+    def drop? path, message
+      drop = config(path)[:drop]
+      if drop
+        drop = drop.is_a?(Array) ? drop : [ drop ]
+        drop.each do |pattern|
+          return true if message =~ pattern
+        end
+      end
+      return false
+    end
+
     def enqueue path, message
+      if drop? path, message
+        log.trace \
+          event: 'dropped',
+          path: path,
+          message: message
+        return
+      end
+
       t = type path
       if t.nil?
         log.trace \
@@ -126,6 +145,7 @@ module Franz
           message: message
         return
       end
+
       log.trace \
         event: 'enqueue',
         path: path,
@@ -147,7 +167,7 @@ module Franz
         lock[event[:path]].synchronize do
           size = buffer.size(event[:path])
           if size > @buffer_limit
-            log.warn \
+            log.trace \
               event: 'buffer overflow',
               path: event[:path],
               size: size,

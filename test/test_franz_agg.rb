@@ -33,13 +33,44 @@ class TestFranzAgg < MiniTest::Test
     tmp.write sample
     tmp.flush
     tmp.close
-    start_agg
+    start_agg multiline: /^multiline/
     sleep 3
     seqs = stop_agg
     path = realpath tmp.path
     assert seqs.include?(path)
     assert_equal sample.strip, @agg_events.shift[:message]
     assert seqs[path] == 1 # should be one line
+  end
+
+  def test_handles_singular_drop
+    sample = "drop this\nbut not this\n"
+    tmp    = tempfile %w[ test1 .log ]
+    tmp.write sample
+    tmp.flush
+    tmp.close
+    start_agg drop: /^drop/
+    sleep 3
+    seqs = stop_agg
+    path = realpath tmp.path
+    assert seqs.include?(path)
+    assert_equal sample.lines.last.strip, @agg_events.shift[:message]
+    assert seqs[path] == 1 # should be one line
+  end
+
+  def test_handles_plural_drop
+    sample = "drop this\nbut not this\nignore this too\nreally\n"
+    tmp    = tempfile %w[ test1 .log ]
+    tmp.write sample
+    tmp.flush
+    tmp.close
+    start_agg drop: [ /^drop/, /^ignore/ ]
+    sleep 5
+    seqs = stop_agg
+    path = realpath tmp.path
+    assert seqs.include?(path)
+    assert_equal sample.lines[1].strip, @agg_events.shift[:message]
+    assert_equal sample.lines[3].strip, @agg_events.shift[:message]
+    assert seqs[path] == 2 # should be two lines
   end
 
 private
@@ -51,13 +82,12 @@ private
     Pathname.new(path).realpath.to_s
   end
 
-  def start_agg opts={}
+  def start_agg config, opts={}
     configs = [{
       type: :test,
-      multiline: /^multiline/,
       includes: [ "#{@tmpdir}/*.log", "#{realpath @tmpdir}/*.log" ],
       excludes: [ "#{@tmpdir}/exclude*" ]
-    }]
+    }.merge(config)]
 
     @discover = Franz::Discover.new({
       discover_interval: 1,
