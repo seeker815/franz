@@ -39,8 +39,6 @@ module Franz
       @buffer = Franz::Sash.new
       @stop   = false
 
-      @num_events = 0
-
       @t1 = Thread.new do
         until @stop
           flush

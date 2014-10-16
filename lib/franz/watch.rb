@@ -23,17 +23,10 @@ module Franz
       @deletions    = opts[:deletions]    || []
       @watch_events = opts[:watch_events] || []
 
-      # Check if files older than STALE_INTERVAL have been updated every
-      # SKIP_INTERVAL seconds. Useful if you've got tons of old files.
-      @stale_interval = opts[:stale_interval] || 900 # 15 minutes
-      @skip_interval  = opts[:skip_interval]  || 120 # 2 minutes
-
       @play_catchup   = opts[:play_catchup?].nil? ? true : opts[:play_catchup?]
       @watch_interval = opts[:watch_interval] || 10
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
-
-      @num_skipped = 0
 
       # Make sure we're up-to-date by rewinding our old stats to our cursors
       if @play_catchup
@@ -45,21 +38,12 @@ module Franz
 
       @stop = false
       @thread = Thread.new do
-        stale_updated = Time.now - @stale_interval
-
         until @stop
-          started = Time.now
           until discoveries.empty?
             @stats[discoveries.shift] = nil
           end
 
-          skip_stale = true
-          if stale_updated < started - @skip_interval
-            skip_stale = false
-            stale_updated = Time.now
-          end
-
-          watch(skip_stale).each do |deleted|
+          watch.each do |deleted|
             @stats.delete deleted
             deletions.push deleted
           end
@@ -106,12 +90,10 @@ module Franz
       watch_events.push name: name, path: path, size: size
     end
 
-    def watch skip_stale=true
+    def watch
       log.debug \
-        event: 'watch',
-        skip_stale: skip_stale
+        event: 'watch'
       deleted = []
-      skip_past = Time.now - @stale_interval
 
       stats.keys.each do |path|
         # Hacks for logs we've removed
@@ -119,12 +101,6 @@ module Franz
         next if File.basename(path) == 'zuora.log'
 
         old_stat = stats[path]
-
-        next if skip_stale \
-        && old_stat \
-        && old_stat[:mtime] \
-        && old_stat[:mtime] < skip_past
-
         stat = stat_for path
         stats[path] = stat
 
