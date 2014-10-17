@@ -79,10 +79,10 @@ module Franz
         stats[path]   = state[path]
       end
 
-      discoveries  = SizedQueue.new opts[:input][:discover_bound]
-      deletions    = SizedQueue.new opts[:input][:discover_bound]
-      watch_events = SizedQueue.new opts[:input][:watch_bound]
-      tail_events  = SizedQueue.new opts[:input][:tail_bound]
+      discoveries  = possibly_bounded_queue opts[:input][:discover_bound]
+      deletions    = possibly_bounded_queue opts[:input][:discover_bound]
+      watch_events = possibly_bounded_queue opts[:input][:watch_bound]
+      tail_events  = possibly_bounded_queue opts[:input][:tail_bound]
 
       @disover = Franz::Discover.new \
         discoveries: discoveries,
@@ -177,5 +177,10 @@ module Franz
 
   private
     def log ; @logger end
+
+    def possibly_bounded_queue size
+      return Queue.new if size.zero?
+      SizedQueue.new size
+    end
   end
 end
