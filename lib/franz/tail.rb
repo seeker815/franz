@@ -69,21 +69,11 @@ module Franz
 
         begin
           data = IO::read path, @block_size, @cursors[path]
+          size = data.bytesize
           buffer[path].extract(data).each do |line|
-            size = line.bytesize
-            if size > @line_limit
-              log.fatal \
-                event: 'killed',
-                reason: 'line overflow',
-                path: path,
-                size: size,
-                limit: @line_limit,
-                pid: $$
-              exit(2)
-            end
             tail_events.push path: path, line: line
           end
-          @cursors[path] += data.bytesize
+          @cursors[path] += size
         rescue EOFError, Errno::ENOENT, NoMethodError
           # we're done here
         end
@@ -101,15 +91,19 @@ module Franz
         raw: event
       case event[:name]
       when :created
+        # nop
       when :replaced
+        log.warn event: 'replaced', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :truncated
+        log.warn event: 'truncated', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :appended
         read event[:path], event[:size]
       when :deleted
+        log.warn event: 'deleted', raw: event
         close event[:path]
       else
         raise 'invalid event'
