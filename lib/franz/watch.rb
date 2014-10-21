@@ -92,7 +92,8 @@ module Franz
 
     def watch
       log.debug \
-        event: 'watch'
+        event: 'watch',
+        stats_size: stats.keys.length
       deleted = []
 
       stats.keys.each do |path|

@@ -29,6 +29,9 @@ module Franz
         handle(watch_events.shift) until @stop
       end
 
+      @last_checkin = Time.now
+      @checkin_interval = 60
+
       log.debug \
         event: 'tail started',
         watch_events: watch_events,
@@ -58,11 +61,19 @@ module Franz
 
     def log ; @logger end
 
+    def checkin now=Time.now
+      if @last_checkin < now - @checkin_interval
+        log.warn event: 'checkin', cursors_size: @cursors.length
+        @last_checkin = now
+      end
+    end
+
     def read path, size
       log.trace \
         event: 'read',
         path: path,
         size: size
+      checkin
       @cursors[path] ||= 0
       loop do
         break if @cursors[path] >= size
@@ -82,6 +93,7 @@ module Franz
 
     def close path
       log.trace event: 'close', path: path
+      tail_events.push path: path, line: buffer[path].flush
       @cursors[path] = 0
     end
 

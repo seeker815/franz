@@ -51,6 +51,9 @@ module Franz
         capture until @stop
       end
 
+      @last_checkin = Time.now
+      @checkin_interval = 60
+
       log.debug \
         event: 'agg started',
         configs: @configs,
@@ -79,6 +82,13 @@ module Franz
     attr_reader :configs, :tail_events, :agg_events, :flush_interval, :seqs, :types, :lock, :buffer
 
     def log ; @logger end
+
+    def checkin now=Time.now
+      if @last_checkin < now - @checkin_interval
+        log.warn event: 'checkin', buffer_size: @buffer.length
+        @last_checkin = now
+      end
+    end
 
     def type path
       begin
@@ -158,6 +168,7 @@ module Franz
       log.trace \
         event: 'capture',
         raw: event
+      checkin
       multiline = config(event[:path])[:multiline] rescue nil
       if multiline.nil?
         enqueue event[:path], event[:line] unless event[:line].empty?
