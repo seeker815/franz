@@ -51,7 +51,7 @@ module Franz
         capture until @stop
       end
 
-      @last_checkin = Time.now
+      @last_checkin = Time.new 0
       @checkin_interval = 60
 
       log.debug \

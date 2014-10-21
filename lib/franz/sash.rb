@@ -29,6 +29,11 @@ module Franz
     # @return [Array<Object>]
     def keys ; @hash.keys end
 
+    # Return the number of keys.
+    #
+    # @return [Integer]
+    def length ; keys.length ; end
+
     # Insert a value into a key's value buffer.
     #
     # @param key [Object]

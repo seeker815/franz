@@ -29,7 +29,7 @@ module Franz
         handle(watch_events.shift) until @stop
       end
 
-      @last_checkin = Time.now
+      @last_checkin = Time.new 0
       @checkin_interval = 60
 
       log.debug \
@@ -73,7 +73,6 @@ module Franz
         event: 'read',
         path: path,
         size: size
-      checkin
       @cursors[path] ||= 0
       loop do
         break if @cursors[path] >= size
@@ -101,6 +100,7 @@ module Franz
       log.trace \
         event: 'handle',
         raw: event
+      checkin
       case event[:name]
       when :created
         # nop
