@@ -36,7 +36,8 @@ module Franz
         event: 'tail started',
         watch_events: watch_events,
         tail_events: tail_events,
-        block_size: block_size
+        block_size: block_size,
+        opts: opts
     end
 
     # Stop the Tail thread. Effectively only once.
@@ -63,7 +64,7 @@ module Franz
 
     def checkin now=Time.now
       if @last_checkin < now - @checkin_interval
-        log.warn event: 'checkin', cursors_size: @cursors.length
+        log.fatal event: 'checkin', cursors_size: @cursors.length
         @last_checkin = now
       end
     end
@@ -105,17 +106,17 @@ module Franz
       when :created
         # nop
       when :replaced
-        log.warn event: 'replaced', raw: event
+        log.fatal event: 'replaced', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :truncated
-        log.warn event: 'truncated', raw: event
+        log.fatal event: 'truncated', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :appended
         read event[:path], event[:size]
       when :deleted
-        log.warn event: 'deleted', raw: event
+        log.fatal event: 'deleted', raw: event
         close event[:path]
       else
         raise 'invalid event'

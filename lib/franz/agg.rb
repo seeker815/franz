@@ -58,7 +58,8 @@ module Franz
         event: 'agg started',
         configs: @configs,
         tail_events: @tail_events,
-        agg_events: @agg_events
+        agg_events: @agg_events,
+        opts: opts
     end
 
     # Stop the Agg thread. Effectively only once.
@@ -85,7 +86,7 @@ module Franz
 
     def checkin now=Time.now
       if @last_checkin < now - @checkin_interval
-        log.warn event: 'checkin', buffer_size: @buffer.length
+        log.fatal event: 'checkin', buffer_size: @buffer.length
         @last_checkin = now
       end
     end

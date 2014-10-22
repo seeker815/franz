@@ -84,7 +84,8 @@ module Franz
 
       log.debug \
         event: 'output started',
-        foreground: @foreground
+        foreground: @foreground,
+        opts: opts
 
       @thread.join if @foreground
     end

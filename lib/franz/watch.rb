@@ -57,7 +57,8 @@ module Franz
         discoveries: discoveries,
         deletions: deletions,
         watch_events: watch_events,
-        watch_interval: watch_interval
+        watch_interval: watch_interval,
+        opts: opts
     end
 
     # Stop the Watch thread. Effectively only once.
@@ -108,15 +109,18 @@ module Franz
         if file_created? old_stat, stat
           # enqueue :created, path
         elsif file_deleted? old_stat, stat
+          log.fatal event: 'deleted!', path: path
           enqueue :deleted, path
           deleted << path
         end
 
         if file_replaced? old_stat, stat
+          log.fatal event: 'replaced!', path: path
           enqueue :replaced, path, stat[:size]
         elsif file_appended? old_stat, stat
           enqueue :appended, path, stat[:size]
         elsif file_truncated? old_stat, stat
+          log.fatal event: 'truncated!', path: path
           enqueue :truncated, path, stat[:size]
         end
       end
