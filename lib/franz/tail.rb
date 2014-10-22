@@ -86,7 +86,7 @@ module Franz
           data = IO::read path, @block_size, @cursors[path]
           if data.nil?
             log.fatal event: 'nil read', path: path
-            next
+            break
           end
           size = data.bytesize
           buffer[path].extract(data).each do |line|
@@ -95,6 +95,7 @@ module Franz
           @cursors[path] += size
         rescue RuntimeError
           log.fatal event: 'buffer full', path: path
+          break
         rescue EOFError, Errno::ENOENT
           # we're done here
         end
