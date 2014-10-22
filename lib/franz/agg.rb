@@ -86,7 +86,7 @@ module Franz
 
     def checkin now=Time.now
       if @last_checkin < now - @checkin_interval
-        log.fatal event: 'checkin', buffer_size: @buffer.length
+        log.warn event: 'checkin', buffer_size: @buffer.length
         @last_checkin = now
       end
     end

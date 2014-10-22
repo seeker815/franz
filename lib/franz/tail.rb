@@ -65,7 +65,7 @@ module Franz
 
     def checkin now=Time.now
       if @last_checkin < now - @checkin_interval
-        log.fatal event: 'checkin', cursors_size: @cursors.length
+        log.warn event: 'checkin', cursors_size: @cursors.length
         @last_checkin = now
       end
     end
@@ -78,18 +78,24 @@ module Franz
       @cursors[path] ||= 0
       spread = size - @cursors[path]
       if spread > @read_limit
-        log.fatal event: 'large read', path: path, spread: spread
+        log.warn event: 'large read', path: path, spread: spread
       end
       loop do
         break if @cursors[path] >= size
 
         begin
           data = IO::read path, @block_size, @cursors[path]
+          if data.nil?
+            log.fatal event: 'nil read', path: path
+            next
+          end
           size = data.bytesize
           buffer[path].extract(data).each do |line|
             tail_events.push path: path, line: line
           end
           @cursors[path] += size
+        rescue RuntimeError
+          log.fatal event: 'buffer full', path: path
         rescue EOFError, Errno::ENOENT
           # we're done here
         end
@@ -111,20 +117,21 @@ module Franz
       when :created
         # nop
       when :replaced
-        log.fatal event: 'replaced', raw: event
+        log.warn event: 'replaced', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :truncated
-        log.fatal event: 'truncated', raw: event
+        log.warn event: 'truncated', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :appended
         read event[:path], event[:size]
       when :deleted
-        log.fatal event: 'deleted', raw: event
+        log.warn event: 'deleted', raw: event
         close event[:path]
       else
-        raise 'invalid event'
+        log.warn event: 'invalid event', raw: event
+        exit 2
       end
       return event[:path]
     end
