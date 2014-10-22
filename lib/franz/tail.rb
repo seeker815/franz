@@ -17,10 +17,11 @@ module Franz
       @watch_events = opts[:watch_events] || []
       @tail_events  = opts[:tail_events]  || []
 
-      @line_limit = opts[:line_limit]  || 10_240 # 10 KiB
-      @block_size = opts[:block_size]  || 32_768 # 32 KiB
-      @cursors    = opts[:cursors]     || Hash.new
-      @logger     = opts[:logger]      || Logger.new(STDOUT)
+      @read_limit = opts[:read_limit] || 10_240 # 100 KiB
+      @line_limit = opts[:line_limit] || 10_240 # 10 KiB
+      @block_size = opts[:block_size] || 32_768 # 32 KiB
+      @cursors    = opts[:cursors]    || Hash.new
+      @logger     = opts[:logger]     || Logger.new(STDOUT)
 
       @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new("\n", @line_limit) }
       @stop   = false
@@ -76,7 +77,7 @@ module Franz
         size: size
       @cursors[path] ||= 0
       spread = size - @cursors[path]
-      if spread > @block_size
+      if spread > @read_limit
         log.fatal event: 'large read', path: path, spread: spread
       end
       loop do

@@ -39,6 +39,7 @@ module Franz
           flush_interval: nil,
           buffer_limit: nil,
           line_limit: nil,
+          read_limit: nil,
           play_catchup?: nil,
           configs: []
         }
@@ -109,6 +110,7 @@ module Franz
         tail_events: tail_events,
         block_size: opts[:input][:block_size],
         line_limit: opts[:input][:line_limit],
+        read_limit: opts[:input][:read_limit],
         logger: opts[:logger],
         cursors: cursors,
         full_state: full_state
