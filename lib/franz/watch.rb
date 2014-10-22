@@ -105,21 +105,16 @@ module Franz
         stat = stat_for path
         stats[path] = stat
 
-        if file_created? old_stat, stat
-          # enqueue :created, path
-        elsif file_deleted? old_stat, stat
-          log.warn event: 'deleted!', path: path
+        if file_deleted? old_stat, stat
           enqueue :deleted, path
           deleted << path
         end
 
         if file_replaced? old_stat, stat
-          log.warn event: 'replaced!', path: path
           enqueue :replaced, path, stat[:size]
         elsif file_appended? old_stat, stat
           enqueue :appended, path, stat[:size]
         elsif file_truncated? old_stat, stat
-          log.warn event: 'truncated!', path: path
           enqueue :truncated, path, stat[:size]
         end
       end

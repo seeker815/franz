@@ -30,9 +30,6 @@ module Franz
         handle(watch_events.shift) until @stop
       end
 
-      @last_checkin = Time.new 0
-      @checkin_interval = 60
-
       log.debug \
         event: 'tail started',
         watch_events: watch_events,
@@ -62,13 +59,6 @@ module Franz
 
     def log ; @logger end
 
-    def checkin now=Time.now
-      if @last_checkin < now - @checkin_interval
-        log.warn event: 'checkin', cursors_size: @cursors.length
-        @last_checkin = now
-      end
-    end
-
     def read path, size
       log.trace \
         event: 'read',
@@ -76,29 +66,58 @@ module Franz
         size: size
       @cursors[path] ||= 0
       spread = size - @cursors[path]
+
       if spread > @read_limit
-        log.warn event: 'large read', path: path, spread: spread
+        log.trace \
+          event: 'large read',
+          path: path,
+          size: size,
+          cursor: @cursors[path],
+          spread: spread
       end
+
       loop do
         break if @cursors[path] >= size
 
         begin
           data = IO::read path, @block_size, @cursors[path]
-          if data.nil?
-            log.fatal event: 'nil read', path: path
-            break
-          end
-          size = data.bytesize
+        rescue EOFError
+          log.warn event: 'read EOF', path: path
+          next
+        rescue Errno::ENOENT
+          log.warn event: 'read ENOENT', path: path
+          next
+        end
+
+        if data.nil?
+          log.fatal event: 'nil read', path: path
+          exit 2
+          raise 'nil read'
+        end
+        size = data.bytesize
+
+        begin
           buffer[path].extract(data).each do |line|
             tail_events.push path: path, line: line
           end
-          @cursors[path] += size
         rescue RuntimeError
           log.fatal event: 'buffer full', path: path
-          break
-        rescue EOFError, Errno::ENOENT
-          # we're done here
+          exit 2
+          raise 'buffer full'
         end
+
+        @cursors[path] += size
+      end
+
+      if @cursors[path] < size
+        log.fatal \
+          event: 'incomplete read',
+          path: path,
+          size: size,
+          cursor: @cursors[path],
+          spread: (size - @cursors[path])
+        exit 2
+        raise 'incomplete read'
       end
     end
 
@@ -112,10 +131,7 @@ module Franz
       log.trace \
         event: 'handle',
         raw: event
-      checkin
       case event[:name]
-      when :created
-        # nop
       when :replaced
         log.warn event: 'replaced', raw: event
         close event[:path]
@@ -130,8 +146,9 @@ module Franz
         log.warn event: 'deleted', raw: event
         close event[:path]
       else
-        log.warn event: 'invalid event', raw: event
+        log.fatal event: 'invalid event', raw: event
         exit 2
+        raise 'invalid event'
       end
       return event[:path]
     end
