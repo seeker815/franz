@@ -75,6 +75,10 @@ module Franz
         path: path,
         size: size
       @cursors[path] ||= 0
+      spread = size - @cursors[path]
+      if spread > @block_size
+        log.fatal event: 'large read', path: path, spread: spread
+      end
       loop do
         break if @cursors[path] >= size
 
@@ -85,7 +89,7 @@ module Franz
             tail_events.push path: path, line: line
           end
           @cursors[path] += size
-        rescue EOFError, Errno::ENOENT, NoMethodError
+        rescue EOFError, Errno::ENOENT
           # we're done here
         end
       end
