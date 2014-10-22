@@ -65,8 +65,7 @@ class Franz::Discover
       discoveries: discoveries,
       deletions: deletions,
       discover_interval: discover_interval,
-      ignore_before: ignore_before,
-      opts: opts
+      ignore_before: ignore_before
   end
 
   # Stop the Discover thread. Effectively only once.

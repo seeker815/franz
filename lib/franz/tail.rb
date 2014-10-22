@@ -37,8 +37,7 @@ module Franz
         event: 'tail started',
         watch_events: watch_events,
         tail_events: tail_events,
-        block_size: block_size,
-        opts: opts
+        block_size: block_size
     end
 
     # Stop the Tail thread. Effectively only once.

@@ -57,8 +57,7 @@ module Franz
         discoveries: discoveries,
         deletions: deletions,
         watch_events: watch_events,
-        watch_interval: watch_interval,
-        opts: opts
+        watch_interval: watch_interval
     end
 
     # Stop the Watch thread. Effectively only once.

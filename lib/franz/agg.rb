@@ -58,8 +58,7 @@ module Franz
         event: 'agg started',
         configs: @configs,
         tail_events: @tail_events,
-        agg_events: @agg_events,
-        opts: opts
+        agg_events: @agg_events
     end
 
     # Stop the Agg thread. Effectively only once.
