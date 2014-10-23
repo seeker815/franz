@@ -89,15 +89,19 @@ module Franz
           next
         end
 
+        # Handle issue with IO::read, which seems to return nil when
+        # the file in question has been rotated. In such a case, we'll
+        # just reset the cursor and bail; hopefully we'll get a
+        # "rotated" event from Watch in the near future.
         if data.nil?
-          log.fatal \
+          log.warn \
             event: 'nil read',
             path: path,
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
-          exit 2
-          raise 'nil read'
+          @cursors[path] = 0
+          return
         end
         size = data.bytesize
 
@@ -113,7 +117,6 @@ module Franz
             cursor: @cursors[path],
             spread: (size - @cursors[path])
           exit 2
-          raise 'buffer full'
         end
 
         @cursors[path] += size
@@ -127,7 +130,6 @@ module Franz
           cursor: @cursors[path],
           spread: (size - @cursors[path])
         exit 2
-        raise 'incomplete read'
       end
     end
 
@@ -158,7 +160,6 @@ module Franz
       else
         log.fatal event: 'invalid event', raw: event
         exit 2
-        raise 'invalid event'
       end
       return event[:path]
     end
