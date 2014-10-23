@@ -90,7 +90,12 @@ module Franz
         end
 
         if data.nil?
-          log.fatal event: 'nil read', path: path
+          log.fatal \
+            event: 'nil read',
+            path: path,
+            size: size,
+            cursor: @cursors[path],
+            spread: (size - @cursors[path])
           exit 2
           raise 'nil read'
         end
@@ -101,7 +106,12 @@ module Franz
             tail_events.push path: path, line: line
           end
         rescue RuntimeError
-          log.fatal event: 'buffer full', path: path
+          log.fatal \
+            event: 'buffer full',
+            path: path,
+            size: size,
+            cursor: @cursors[path],
+            spread: (size - @cursors[path])
           exit 2
           raise 'buffer full'
         end
