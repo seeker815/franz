@@ -81,11 +81,7 @@ module Franz
 
         begin
           data = IO::read path, @block_size, @cursors[path]
-        rescue EOFError
-          log.warn event: 'read EOF', path: path
-          next
-        rescue Errno::ENOENT
-          log.warn event: 'read ENOENT', path: path
+        rescue EOFError, Errno::ENOENT
           next
         end
 
@@ -145,17 +141,14 @@ module Franz
         raw: event
       case event[:name]
       when :replaced
-        log.warn event: 'replaced', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :truncated
-        log.warn event: 'truncated', raw: event
         close event[:path]
         read event[:path], event[:size]
       when :appended
         read event[:path], event[:size]
       when :deleted
-        log.warn event: 'deleted', raw: event
         close event[:path]
       else
         log.fatal event: 'invalid event', raw: event
