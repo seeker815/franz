@@ -97,18 +97,23 @@ private
   end
 
   def start_tail opts={}
+    @configs = [{
+      includes: [ "#{@tmpdir}/*.log" ],
+      excludes: [ "#{@tmpdir}/exclude*" ]
+    }]
+
+    @ic = Franz::InputConfig.new @configs
+
     @discover = Franz::Discover.new({
+      input_config: @ic,
       discover_interval: 1,
       discoveries: @discoveries,
       deletions: @deletions,
-      logger: @logger,
-      configs: [{
-        includes: [ "#{@tmpdir}/*.log" ],
-        excludes: [ "#{@tmpdir}/exclude*" ]
-      }]
+      logger: @logger
     }.deep_merge!(opts))
 
     @watch = Franz::Watch.new({
+      input_config: @ic,
       watch_interval: 1,
       watch_events: @watch_events,
       discoveries: @discoveries,
@@ -117,6 +122,7 @@ private
     }.deep_merge!(opts))
 
     @tail = Franz::Tail.new({
+      input_config: @ic,
       eviction_interval: 1,
       watch_events: @watch_events,
       tail_events: @tail_events,

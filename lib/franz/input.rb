@@ -67,8 +67,6 @@ module Franz
           checkpoint: last_checkpoint_path
       end
 
-      full_state = state.nil? ? nil : state.dup
-
       state = state || {}
       known = state.keys
       stats, cursors, seqs = {}, {}, {}
@@ -85,45 +83,45 @@ module Franz
       watch_events = possibly_bounded_queue opts[:input][:watch_bound]
       tail_events  = possibly_bounded_queue opts[:input][:tail_bound]
 
+      ic = InputConfig.new opts[:input][:configs]
+
       @disover = Franz::Discover.new \
+        input_config: ic,
         discoveries: discoveries,
         deletions: deletions,
-        configs: opts[:input][:configs],
         discover_interval: opts[:input][:discover_interval],
         ignore_before: opts[:input][:ignore_before],
         logger: opts[:logger],
-        known: known,
-        full_state: full_state
+        known: known
 
       @watch = Franz::Watch.new \
+        input_config: ic,
         discoveries: discoveries,
         deletions: deletions,
         watch_events: watch_events,
         watch_interval: opts[:input][:watch_interval],
         play_catchup?: opts[:input][:play_catchup?],
         logger: opts[:logger],
-        stats: stats,
-        full_state: full_state
+        stats: stats
 
       @tail = Franz::Tail.new \
+        input_config: ic,
         watch_events: watch_events,
         tail_events: tail_events,
         block_size: opts[:input][:block_size],
         line_limit: opts[:input][:line_limit],
         read_limit: opts[:input][:read_limit],
         logger: opts[:logger],
-        cursors: cursors,
-        full_state: full_state
+        cursors: cursors
 
       @agg = Franz::Agg.new \
-        configs: opts[:input][:configs],
+        input_config: ic,
         tail_events: tail_events,
         agg_events: opts[:output],
         flush_interval: opts[:input][:flush_interval],
         buffer_limit: opts[:input][:buffer_limit],
         logger: opts[:logger],
-        seqs: seqs,
-        full_state: full_state
+        seqs: seqs
 
       @stop = false
       @t = Thread.new do

@@ -4,6 +4,7 @@ require 'socket'
 require 'pathname'
 
 require_relative 'sash'
+require_relative 'input_config'
 
 module Franz
 
@@ -18,14 +19,15 @@ module Franz
     # Start a new Agg thread in the background.
     #
     # @param [Hash] opts options for the aggregator
-    # @option opts [Array<Hash>] :configs ([]) file input configuration
+    # @option opts [InputConfig] :input_config shared Franz configuration
     # @option opts [Queue] :tail_events ([]) "input" queue from Tail
     # @option opts [Queue] :agg_events ([]) "output" queue
     # @option opts [Integer] :flush_interval (5) seconds between flushes
     # @option opts [Hash<Path,Fixnum>] :seqs ({}) internal "seqs" state
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
-      @configs     = opts[:configs]     || []
+      @ic = opts[:input_config] || raise('No input_config specified')
+
       @tail_events = opts[:tail_events] || []
       @agg_events  = opts[:agg_events]  || []
 
@@ -34,7 +36,6 @@ module Franz
       @seqs           = opts[:seqs]           || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
 
-      @types  = Hash.new
       @lock   = Hash.new { |h,k| h[k] = Mutex.new }
       @buffer = Franz::Sash.new
       @stop   = false
@@ -53,7 +54,6 @@ module Franz
 
       log.debug \
         event: 'agg started',
-        configs: @configs,
         tail_events: @tail_events,
         agg_events: @agg_events
     end
@@ -76,58 +76,16 @@ module Franz
     end
 
   private
-    attr_reader :configs, :tail_events, :agg_events, :flush_interval, :seqs, :types, :lock, :buffer
+    attr_reader :tail_events, :agg_events, :flush_interval, :lock, :buffer
 
     def log ; @logger end
-
-    def type path
-      begin
-        @types.fetch path
-      rescue KeyError
-        configs.each do |config|
-          type = config[:type] if config[:includes].any? { |glob|
-            included = File.fnmatch? glob, path
-            excludes = !config[:excludes].nil?
-            excluded = excludes && config[:excludes].any? { |exlude|
-              File.fnmatch? exlude, File::basename(path)
-            }
-            included && !excluded
-          }
-          unless type.nil?
-            @types[path] = type
-            return type
-          end
-        end
-        log.warn \
-          event: 'type unknown',
-          path: path
-        @types[path] = nil
-        return nil
-      end
-    end
-
-    def config path
-      t = type(path)
-      configs.select { |c| c[:type] == t }.shift
-    end
 
     def seq path
       seqs[path] = seqs.fetch(path, 0) + 1
     end
 
-    def drop? path, message
-      drop = config(path)[:drop]
-      if drop
-        drop = drop.is_a?(Array) ? drop : [ drop ]
-        drop.each do |pattern|
-          return true if message =~ pattern
-        end
-      end
-      return false
-    end
-
     def enqueue path, message
-      if drop? path, message
+      if @ic.drop? path, message
         log.trace \
           event: 'dropped',
           path: path,
@@ -135,7 +93,7 @@ module Franz
         return
       end
 
-      t = type path
+      t = @ic.type path
       if t.nil?
         log.trace \
           event: 'enqueue skipped',
@@ -158,7 +116,7 @@ module Franz
       log.trace \
         event: 'capture',
         raw: event
-      multiline = config(event[:path])[:multiline] rescue nil
+      multiline = @ic.config(event[:path])[:multiline] rescue nil
       if multiline.nil?
         enqueue event[:path], event[:line] unless event[:line].empty?
       else

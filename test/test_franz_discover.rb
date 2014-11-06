@@ -65,15 +65,19 @@ private
   end
 
   def start_discovery opts={}
+    @configs = [{
+      includes: [ "#{@tmpdir}/*.log" ],
+      excludes: [ "#{@tmpdir}/exclude*" ]
+    }]
+
+    @ic = Franz::InputConfig.new @configs
+
     @discover = Franz::Discover.new({
+      input_config: @ic,
       discover_interval: 1,
       discoveries: @discoveries,
       deletions: @deletions,
-      logger: @logger,
-      configs: [{
-        includes: [ "#{@tmpdir}/*.log" ],
-        excludes: [ "#{@tmpdir}/exclude*" ]
-      }]
+      logger: @logger
     }.deep_merge!(opts))
   end
 

@@ -117,18 +117,23 @@ private
   end
 
   def start_watch opts={}
+    @configs = [{
+      includes: [ "#{@tmpdir}/*.log" ],
+      excludes: [ "#{@tmpdir}/exclude*" ]
+    }]
+
+    @ic = Franz::InputConfig.new @configs
+
     @discover = Franz::Discover.new({
+      input_config: @ic,
       discover_interval: 1,
       discoveries: @discoveries,
       deletions: @deletions,
-      logger: @logger,
-      configs: [{
-        includes: [ "#{@tmpdir}/*.log" ],
-        excludes: [ "#{@tmpdir}/exclude*" ]
-      }]
+      logger: @logger
     })
 
     @watch = Franz::Watch.new({
+      input_config: @ic,
       watch_interval: 1,
       watch_events: @queue,
       discoveries: @discoveries,

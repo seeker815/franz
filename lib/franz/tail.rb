@@ -8,12 +8,19 @@ module Franz
   # Tail receives low-level file events from a Watch and handles the actual
   # reading of files, providing a stream of lines.
   class Tail
+    ERR_NIL_READ = 1
+    ERR_INVALID_EVENT = 2
+    ERR_INCOMPLETE_READ = 3
+
     attr_reader :cursors
 
     # Start a new Tail thread in the background.
     #
     # @param opts [Hash] a complex Hash for tail configuration
+    # @option opts [InputConfig] :input_config shared Franz configuration
     def initialize opts={}
+      @ic = opts[:input_config] || raise('No input_config specified')
+
       @watch_events = opts[:watch_events] || []
       @tail_events  = opts[:tail_events]  || []
 
@@ -67,6 +74,16 @@ module Franz
       @cursors[path] ||= 0
       spread = size - @cursors[path]
 
+      if spread <= 0
+        log.trace \
+          event: 'ignoring read',
+          path: path,
+          size: size,
+          cursor: @cursors[path],
+          spread: spread
+        return
+      end
+
       if spread > @read_limit
         log.trace \
           event: 'large read',
@@ -112,7 +129,7 @@ module Franz
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
-          exit 2
+          exit ERR_NIL_READ
         end
 
         @cursors[path] += size
@@ -125,7 +142,7 @@ module Franz
           size: size,
           cursor: @cursors[path],
           spread: (size - @cursors[path])
-        exit 2
+        exit ERR_INCOMPLETE_READ
       end
     end
 
@@ -152,7 +169,7 @@ module Franz
         close event[:path]
       else
         log.fatal event: 'invalid event', raw: event
-        exit 2
+        exit ERR_INVALID_EVENT
       end
       return event[:path]
     end

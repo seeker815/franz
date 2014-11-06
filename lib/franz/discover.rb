@@ -11,25 +11,25 @@ class Franz::Discover
   # Start a new Discover thread in the background.
   #
   # @param [Hash] opts options for the discovery
-  # @option opts [Array<Hash>] :configs ([]) file input configuration
+  # @option opts [InputConfig] :input_config shared Franz configuration
   # @option opts [Queue] :discoveries ([]) "output" queue of discovered paths
   # @option opts [Queue] :deletions ([]) "input" queue of deleted paths
   # @option opts [Integer] :discover_interval (5) seconds between discover rounds
   # @option opts [Array<Path>] :known ([]) internal "known" state
   # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
   def initialize opts={}
-    @configs     = opts[:configs]     || []
+    @ic = opts[:input_config] || raise('No input_config specified')
+
     @discoveries = opts[:discoveries] || []
     @deletions   = opts[:deletions]   || []
 
     @discover_interval = opts[:discover_interval] || 30
-    @ignore_before     = opts[:ignore_before]     || 0
     @known             = opts[:known]             || []
     @logger            = opts[:logger]            || Logger.new(STDOUT)
 
     @known = Set.new(@known)
 
-    @configs = configs.map do |config|
+    @configs = @ic.configs.map do |config|
       config[:includes] ||= []
       config[:excludes] ||= []
       config
@@ -61,11 +61,9 @@ class Franz::Discover
 
     log.debug \
       event: 'discover started',
-      configs: configs,
       discoveries: discoveries,
       deletions: deletions,
-      discover_interval: discover_interval,
-      ignore_before: ignore_before
+      discover_interval: discover_interval
   end
 
   # Stop the Discover thread. Effectively only once.
@@ -85,7 +83,7 @@ class Franz::Discover
   end
 
 private
-  attr_reader :configs, :discoveries, :deletions, :discover_interval, :known, :ignore_before
+  attr_reader :configs, :discoveries, :deletions, :discover_interval, :known
 
   def log ; @logger end
 

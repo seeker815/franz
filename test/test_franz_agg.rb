@@ -83,21 +83,24 @@ private
   end
 
   def start_agg config, opts={}
-    configs = [{
+    @configs = [{
       type: :test,
       includes: [ "#{@tmpdir}/*.log", "#{realpath @tmpdir}/*.log" ],
       excludes: [ "#{@tmpdir}/exclude*" ]
     }.merge(config)]
 
+    @ic = Franz::InputConfig.new @configs
+
     @discover = Franz::Discover.new({
+      input_config: @ic,
       discover_interval: 1,
       discoveries: @discoveries,
       deletions: @deletions,
-      logger: @logger,
-      configs: configs
+      logger: @logger
     }.deep_merge!(opts))
 
     @watch = Franz::Watch.new({
+      input_config: @ic,
       watch_interval: 1,
       watch_events: @watch_events,
       discoveries: @discoveries,
@@ -106,6 +109,7 @@ private
     }.deep_merge!(opts))
 
     @tail = Franz::Tail.new({
+      input_config: @ic,
       eviction_interval: 1,
       watch_events: @watch_events,
       tail_events: @tail_events,
@@ -113,7 +117,7 @@ private
     }.deep_merge!(opts))
 
     @agg = Franz::Agg.new({
-      configs: configs,
+      input_config: @ic,
       flush_interval: 2,
       tail_events: @tail_events,
       agg_events: @agg_events,

@@ -12,6 +12,7 @@ module Franz
     # Start a new Watch thread in the background.
     #
     # @param [Hash] opts options for the watch
+    # @option opts [InputConfig] :input_config shared Franz configuration
     # @option opts [Queue] :discoveries ([]) "input" queue of discovered paths
     # @option opts [Queue] :deletions ([]) "output" queue of deleted paths
     # @option opts [Queue] :watch_events ([]) "output" queue of file events
@@ -19,6 +20,8 @@ module Franz
     # @option opts [Hash<Path,State>] :stats ([]) internal "stats" state
     # @option opts [Logger] :logger (Logger.new(STDOUT)) logger to use
     def initialize opts={}
+      @ic = opts[:input_config] || raise('No input_config specified')
+
       @discoveries  = opts[:discoveries]  || []
       @deletions    = opts[:deletions]    || []
       @watch_events = opts[:watch_events] || []
@@ -32,7 +35,7 @@ module Franz
       if @play_catchup
         log.debug event: 'play catchup'
         stats.keys.each do |path|
-          stats[path][:size] = opts[:full_state][path][:cursor] || 0
+          stats[path][:size] = 0
         end
       end
 
@@ -97,10 +100,6 @@ module Franz
       deleted = []
 
       stats.keys.each do |path|
-        # Hacks for logs we've removed
-        next if File.basename(path) =~ /^rtpstat/
-        next if File.basename(path) == 'zuora.log'
-
         old_stat = stats[path]
         stat = stat_for path
         stats[path] = stat
