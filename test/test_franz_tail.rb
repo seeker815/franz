@@ -91,6 +91,21 @@ class TestFranzTail < MiniTest::Test
     assert cursors[tmp.path] == sample.length * 2
   end
 
+  def test_handles_large_read
+    sample = 10_000.times.map do
+      "Hello, world!"
+    end.join("\n")
+    tmp = tempfile %w[ test1 .log ]
+    tmp.write sample
+    tmp.flush
+    tmp.close
+    start_tail
+    sleep 3
+    cursors = stop_tail
+    assert cursors.include?(tmp.path)
+    assert cursors[tmp.path] == sample.length
+  end
+
 private
   def tempfile prefix=nil
     Tempfile.new prefix, @tmpdir

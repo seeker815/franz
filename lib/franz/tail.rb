@@ -116,7 +116,7 @@ module Franz
           @cursors[path] = 0
           return
         end
-        size = data.bytesize
+        data_size = data.bytesize
 
         begin
           buffer[path].extract(data).each do |line|
@@ -132,7 +132,7 @@ module Franz
           exit ERR_NIL_READ
         end
 
-        @cursors[path] += size
+        @cursors[path] += data_size
       end
 
       if @cursors[path] < size
