@@ -113,8 +113,7 @@ module Franz
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
-          @cursors[path] = 0
-          return
+          next
         end
         data_size = data.bytesize
 

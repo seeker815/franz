@@ -50,10 +50,11 @@ module Franz
       self.formatter = proc do |severity, datetime, _, message|
         if colorize
           if level == 1
-            short_format.colorize(
+            event = { timestamp: Time.now.iso8601(6) }.merge(message)
+            JSON::generate(event).colorize(
               color: SEVERITY_COLORS[severity.to_s][0],
               background: SEVERITY_COLORS[severity.to_s][1]
-            ) % message
+            ) + "\n"
           else
             long_format.colorize(
               color: SEVERITY_COLORS[severity.to_s][0],
@@ -67,7 +68,8 @@ module Franz
           end
         else # plain
           if level == 1
-            short_format % message
+            event = { timestamp: Time.now.iso8601(6) }.merge(message)
+            JSON::generate(event) + "\n"
           else
             long_format % [
               severity,
