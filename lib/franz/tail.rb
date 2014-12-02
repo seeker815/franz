@@ -93,6 +93,8 @@ module Franz
           spread: spread
       end
 
+      nil_reads = 0
+
       loop do
         break if @cursors[path] >= size
 
@@ -107,14 +109,29 @@ module Franz
         # just reset the cursor and bail; hopefully we'll get a
         # "rotated" event from Watch in the near future.
         if data.nil?
+          nil_reads += 1
+
           log.warn \
             event: 'nil read',
             path: path,
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
+
+          if nil_reads >= 100
+            log.error \
+              event: 'nil read loop',
+              path: path,
+              size: size,
+              cursor: @cursors[path],
+              spread: (size - @cursors[path])
+            @cursors[path] = 0
+            return
+          end
+
           next
         end
+
         data_size = data.bytesize
 
         begin
