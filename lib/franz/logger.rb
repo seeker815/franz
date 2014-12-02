@@ -35,7 +35,7 @@ module Franz
     def initialize debug=false, trace=false, out=nil
       colorize = out.nil?
       out ||= $stdout
-      super out
+      super out, 5, 104857600 # Keep max five logs at 100 [MiB] each
       format colorize
       @trace = true if trace
       self.level = ::Logger::INFO
