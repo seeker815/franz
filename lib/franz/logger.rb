@@ -1,9 +1,12 @@
+require 'socket'
 require 'logger'
 require 'time'
 
 require 'colorize'
 
+
 module Franz
+  HOSTNAME = Socket.gethostname
 
   # Extending the Logger with TRACE capabilities
   class ::Logger
@@ -45,14 +48,17 @@ module Franz
   private
     def format colorize
       self.formatter = proc do |severity, datetime, _, message|
+        severity.downcase!
 
         message = { message: message } unless message.is_a? Hash
 
         event = {
-          severity: severity.downcase!,
-          timestamp: datetime.iso8601(6),
-          marker: File::basename(caller[4])
-        }.merge(message)
+          type: :franz,
+          level: severity,
+          '@timestamp' => datetime.iso8601(3),
+          marker: File::basename(caller[4]),
+          host: HOSTNAME
+        }.merge message
 
         if colorize # console output
           event = JSON::pretty_generate(event) + "\n"
