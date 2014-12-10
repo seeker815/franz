@@ -53,7 +53,6 @@ module Franz
         message = { message: message } unless message.is_a? Hash
 
         event = {
-          type: :franz,
           level: severity,
           '@timestamp' => datetime.iso8601(3),
           marker: File::basename(caller[4]),

@@ -12,6 +12,14 @@ module Franz
       configs.select { |c| c[:type] == t }.shift
     end
 
+    def json? path
+      begin
+        return config(path)[:json?]
+      rescue
+        return false
+      end
+    end
+
     def drop? path, message
       begin
         drop = config(path)[:drop]

@@ -108,7 +108,15 @@ module Franz
         message: message
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
-      agg_events.push path: path, message: m, type: t, host: @@host, '@seq' => s
+
+      event = { path: path, type: t, host: @@host, '@seq' => s }
+      if @ic.json? path
+        return if m =~ /^#/
+        event.merge! JSON::parse(m)
+      else
+        event.merge! message: m
+      end
+      agg_events.push event
     end
 
     def capture
