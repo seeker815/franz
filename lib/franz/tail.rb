@@ -8,7 +8,7 @@ module Franz
   # Tail receives low-level file events from a Watch and handles the actual
   # reading of files, providing a stream of lines.
   class Tail
-    ERR_NIL_READ = 1
+    ERR_BUFFER_FULL = 1
     ERR_INVALID_EVENT = 2
     ERR_INCOMPLETE_READ = 3
 
@@ -93,42 +93,23 @@ module Franz
           spread: spread
       end
 
-      nil_reads = 0
-
       loop do
         break if @cursors[path] >= size
 
         begin
           data = IO::read path, @block_size, @cursors[path]
         rescue EOFError, Errno::ENOENT
-          next
+          data = nil
         end
 
-        # Handle issue with IO::read, which seems to return nil when
-        # the file in question has been rotated. In such a case, we'll
-        # just reset the cursor and bail; hopefully we'll get a
-        # "rotated" event from Watch in the near future.
-        if data.nil?
-          nil_reads += 1
-
+        if data.nil? # Old file went away
           log.warn \
             event: 'nil read',
             path: path,
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
-
-          if nil_reads >= 100
-            log.error \
-              event: 'nil read loop',
-              path: path,
-              size: size,
-              cursor: @cursors[path],
-              spread: (size - @cursors[path])
-            @cursors[path] = 0
-            return
-          end
-
+          @cursors[path] = 0
           next
         end
 
@@ -145,7 +126,7 @@ module Franz
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
-          exit ERR_NIL_READ
+          exit ERR_BUFFER_FULL
         end
 
         @cursors[path] += data_size

@@ -16,16 +16,16 @@ module Franz
     end
   end
 
-  # A powerful, colorful logger for Franz.
+  # A colorful JSON logger for Franz.
   class Logger < Logger
     # Maps each log level to a unique combination of fore- and background colors
     SEVERITY_COLORS = {
-      'DEBUG' => [ :blue,    :default ],
-      'INFO'  => [ :green,   :default ],
-      'WARN'  => [ :yellow,  :default ],
-      'ERROR' => [ :red,     :default ],
-      'FATAL' => [ :red,     :black   ],
-      'TRACE' => [ :magenta, :default ]
+      'debug' => [ :blue,    :default ],
+      'info'  => [ :green,   :default ],
+      'warn'  => [ :yellow,  :default ],
+      'error' => [ :red,     :default ],
+      'fatal' => [ :red,     :black   ],
+      'trace' => [ :magenta, :default ]
     }
 
     # Create a new, colorful logger.
@@ -44,46 +44,24 @@ module Franz
 
   private
     def format colorize
-      short_format = "%s\n"
-      long_format  = "%s [%s] %s -- %s\n"
-
       self.formatter = proc do |severity, datetime, _, message|
-        if colorize
-          if level == 1
-            event = {
-              level: severity.downcase,
-              timestamp: Time.now.iso8601(6)
-            }.merge(message)
-            JSON::generate(event).colorize(
-              color: SEVERITY_COLORS[severity.to_s][0],
-              background: SEVERITY_COLORS[severity.to_s][1]
-            ) + "\n"
-          else
-            long_format.colorize(
-              color: SEVERITY_COLORS[severity.to_s][0],
-              background: SEVERITY_COLORS[severity.to_s][1]
-            ) % [
-              severity,
-              datetime.iso8601(6),
-              File::basename(caller[4]),
-              message
-            ]
-          end
-        else # plain
-          if level == 1
-            event = {
-              level: severity.downcase,
-              timestamp: Time.now.iso8601(6)
-            }.merge(message)
-            JSON::generate(event) + "\n"
-          else
-            long_format % [
-              severity,
-              datetime.iso8601(6),
-              File::basename(caller[4]),
-              message
-            ]
-          end
+
+        message = { message: message } unless message.is_a? Hash
+
+        event = {
+          severity: severity.downcase!,
+          timestamp: datetime.iso8601(6),
+          marker: File::basename(caller[4])
+        }.merge(message)
+
+        if colorize # console output
+          event = JSON::pretty_generate(event) + "\n"
+          event.colorize \
+            color: SEVERITY_COLORS[severity][0],
+            background: SEVERITY_COLORS[severity][1]
+
+        else # logging to file
+          event = JSON::generate(event) + "\n"
         end
       end
     end

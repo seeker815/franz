@@ -37,7 +37,8 @@ module Franz
       rabbit = Bunny.new opts[:output][:connection].merge({
         network_recovery_interval: 10.0,
         continuation_timeout: 10_000,
-        threaded: false
+        threaded: false,
+        logger: @logger
       })
 
       rabbit.start
