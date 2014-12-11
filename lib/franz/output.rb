@@ -57,22 +57,23 @@ module Franz
           event = opts[:input].shift
 
           if event[:path]
-            event[:path].sub! '/home/denimuser/seam-builds/rel', ''
-            event[:path].sub! '/home/denimuser/seam-builds/live', ''
-            event[:path].sub! '/home/denimuser/seam-builds/beta', ''
-            event[:path].sub! '/home/denimuser/builds/rel', ''
-            event[:path].sub! '/home/denimuser/builds/live', ''
-            event[:path].sub! '/home/denimuser/builds/beta', ''
-            event[:path].sub! '/home/denimuser/cobalt-builds/rel', ''
-            event[:path].sub! '/home/denimuser/cobalt-builds/live', ''
-            event[:path].sub! '/home/denimuser/cobalt-builds/beta', ''
-            event[:path].sub! '/home/denimuser/rivet-builds', ''
-            event[:path].sub! '/home/denimuser/denim/logs', ''
-            event[:path].sub! '/home/denimuser/seam/logs', ''
-            event[:path].sub! '/home/denimuser/rivet/bjn/logs', ''
-            event[:path].sub! '/home/denimuser', ''
-            event[:path].sub! '/var/log/franz', ''
-            event[:path].sub! '/var/log', ''
+            # Can't use sub!, because :path is frozen
+            event[:path] = event[:path].sub '/home/denimuser/seam-builds/rel', ''
+            event[:path] = event[:path].sub '/home/denimuser/seam-builds/live', ''
+            event[:path] = event[:path].sub '/home/denimuser/seam-builds/beta', ''
+            event[:path] = event[:path].sub '/home/denimuser/builds/rel', ''
+            event[:path] = event[:path].sub '/home/denimuser/builds/live', ''
+            event[:path] = event[:path].sub '/home/denimuser/builds/beta', ''
+            event[:path] = event[:path].sub '/home/denimuser/cobalt-builds/rel', ''
+            event[:path] = event[:path].sub '/home/denimuser/cobalt-builds/live', ''
+            event[:path] = event[:path].sub '/home/denimuser/cobalt-builds/beta', ''
+            event[:path] = event[:path].sub '/home/denimuser/rivet-builds', ''
+            event[:path] = event[:path].sub '/home/denimuser/denim/logs', ''
+            event[:path] = event[:path].sub '/home/denimuser/seam/logs', ''
+            event[:path] = event[:path].sub '/home/denimuser/rivet/bjn/logs', ''
+            event[:path] = event[:path].sub '/home/denimuser', ''
+            event[:path] = event[:path].sub '/var/log/franz', ''
+            event[:path] = event[:path].sub '/var/log', ''
           end
 
           log.trace \
