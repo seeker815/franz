@@ -74,9 +74,10 @@ module Franz
       @cursors[path] ||= 0
       spread = size - @cursors[path]
 
-      if spread <= 0
-        log.trace \
-          event: 'ignoring read',
+      # Not convinced this would ever happen...
+      if spread < 0
+        log.error \
+          event: 'negative spread',
           path: path,
           size: size,
           cursor: @cursors[path],
@@ -102,15 +103,17 @@ module Franz
           data = nil
         end
 
-        if data.nil? # Old file went away
+        if data.nil?
+          # Not so sure of myself here: It's been truncated, it's been rotated,
+          # or else it no longer exists. We "return" in hopes that a :truncated,
+          # :rotated, :deleted event comes along soon after. If it doesn't...
           log.warn \
             event: 'nil read',
             path: path,
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
-          @cursors[path] = 0
-          next
+          return
         end
 
         data_size = data.bytesize
@@ -154,10 +157,7 @@ module Franz
         event: 'handle',
         raw: event
       case event[:name]
-      when :replaced
-        close event[:path]
-        read event[:path], event[:size]
-      when :truncated
+      when :replaced, :truncated
         close event[:path]
         read event[:path], event[:size]
       when :appended

@@ -102,7 +102,8 @@ module Franz
         watch_interval: opts[:input][:watch_interval],
         play_catchup?: opts[:input][:play_catchup?],
         logger: opts[:logger],
-        stats: stats
+        stats: stats,
+        cursors: cursors
 
       @tail = Franz::Tail.new \
         input_config: ic,

@@ -50,10 +50,13 @@ module Franz
 
         message = { message: message } unless message.is_a? Hash
 
-        event = {
+        event = message.merge \
           'level' => severity,
           '@timestamp' => datetime.iso8601(3)
-        }.merge message
+
+        unless level == ::Logger::INFO
+          event.merge! marker: File::basename(caller[4])
+        end
 
         if colorize # console output
           event = JSON::pretty_generate(event) + "\n"

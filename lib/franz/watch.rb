@@ -35,7 +35,7 @@ module Franz
       if @play_catchup
         log.debug event: 'play catchup'
         stats.keys.each do |path|
-          stats[path][:size] = 0
+          stats[path][:size] = opts[:cursors][path] || 0
         end
       end
 
