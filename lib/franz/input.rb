@@ -171,8 +171,7 @@ module Franz
       old_checkpoints.pop # Keep last two checkpoints
       old_checkpoints.map { |c| FileUtils.rm c }
       log.info \
-        event: 'input checkpoint saved',
-        checkpoint: path
+        event: 'input checkpoint saved'
     end
 
   private
