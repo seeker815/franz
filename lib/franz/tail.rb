@@ -99,8 +99,13 @@ module Franz
 
         begin
           data = IO::read path, @block_size, @cursors[path]
-        rescue EOFError, Errno::ENOENT
+          reason_for_nil_data = 'unknown'
+        rescue EOFError
           data = nil
+          reason_for_nil_data = 'eof'
+        rescue Errno::ENOENT
+          data = nil
+          reason_for_nil_data = 'noent'
         end
 
         if data.nil?
@@ -112,7 +117,8 @@ module Franz
             path: path,
             size: size,
             cursor: @cursors[path],
-            spread: (size - @cursors[path])
+            spread: (size - @cursors[path]),
+            reason: reason_for_nil_data
           return
         end
 

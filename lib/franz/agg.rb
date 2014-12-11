@@ -109,12 +109,13 @@ module Franz
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
 
-      event = { path: path, type: t, host: @@host, '@seq' => s }
+      event = { type: t, host: @@host, '@seq' => s }
+
       if @ic.json? path
         return if m =~ /^#/
-        event.merge! JSON::parse(m)
+        event = JSON::parse(m).merge(event)
       else
-        event.merge! message: m
+        event.merge! message: m, path: path
       end
       agg_events.push event
     end
