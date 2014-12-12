@@ -180,7 +180,7 @@ module Franz
         close path
 
       when :replaced, :truncated
-        close
+        close path
         read path, size
 
       when :appended
