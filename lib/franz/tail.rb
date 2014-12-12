@@ -30,8 +30,9 @@ module Franz
       @cursors    = opts[:cursors]    || Hash.new
       @logger     = opts[:logger]     || Logger.new(STDOUT)
 
+      @nil_read = Hash.new { |h,k| h[k] = false }
       @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new("\n", @line_limit) }
-      @stop   = false
+      @stop = false
 
       @tail_thread = Thread.new do
         handle(watch_events.shift) until @stop
@@ -66,6 +67,7 @@ module Franz
 
     def log ; @logger end
 
+
     def read path, size
       log.trace \
         event: 'read',
@@ -74,19 +76,24 @@ module Franz
       @cursors[path] ||= 0
       spread = size - @cursors[path]
 
-      # Not convinced this would ever happen...
+      # A negative spread size means we've probably worked ahead of ourselves.
+      # In such a case, we'll ignore the request, as it's likely been fulfilled.
+      # We only need to worry if the spread size grows larger than the block
+      # size--that means something other than us reading threw Franz off...
       if spread < 0
-        log.error \
-          event: 'negative spread',
-          path: path,
-          size: size,
-          cursor: @cursors[path],
-          spread: spread
+        if spread.abs > @block_size
+          log.warn \
+            event: 'large spread',
+            path: path,
+            size: size,
+            cursor: @cursors[path],
+            spread: spread
+        end
         return
       end
 
       if spread > @read_limit
-        log.trace \
+        log.warn \
           event: 'large read',
           path: path,
           size: size,
@@ -112,13 +119,14 @@ module Franz
           # Not so sure of myself here: It's been truncated, it's been rotated,
           # or else it no longer exists. We "return" in hopes that a :truncated,
           # :rotated, :deleted event comes along soon after. If it doesn't...
-          log.warn \
+          log.error \
             event: 'nil read',
             path: path,
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path]),
             reason: reason_for_nil_data
+          @nil_read[path] = true
           return
         end
 
@@ -152,29 +160,47 @@ module Franz
       end
     end
 
+
     def close path
       log.trace event: 'close', path: path
       tail_events.push path: path, line: buffer[path].flush
+      @nil_read.delete path
       @cursors[path] = 0
     end
 
+
     def handle event
+      path, size = event[:path], event[:size]
       log.trace \
         event: 'handle',
         raw: event
       case event[:name]
-      when :replaced, :truncated
-        close event[:path]
-        read event[:path], event[:size]
-      when :appended
-        read event[:path], event[:size]
+
       when :deleted
-        close event[:path]
+        close path
+
+      when :replaced, :truncated
+        close
+        read path, size
+
+      when :appended
+        # Ignore read requests after a nil read. We'll wait for the next
+        # event that tells us to close the file. Fingers crossed...
+        unless @nil_read[path]
+          read path, size
+
+        else # following a nil read
+          log.debug \
+            event: 'skipping read',
+            raw: event
+        end
+
       else
         log.fatal event: 'invalid event', raw: event
         exit ERR_INVALID_EVENT
       end
-      return event[:path]
+
+      return path
     end
   end
 end
