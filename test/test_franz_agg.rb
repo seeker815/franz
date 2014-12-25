@@ -5,6 +5,7 @@ require 'fileutils'
 require 'pathname'
 require 'minitest/autorun'
 
+require 'slog'
 require 'deep_merge'
 
 require_relative '../lib/franz'

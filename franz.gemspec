@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.summary     = Franz::SUMMARY
   s.description = Franz::SUMMARY + '.'
 
+  s.add_runtime_dependency 'slog', '~> 1'
   s.add_runtime_dependency 'bunny', '~> 1'
   s.add_runtime_dependency 'trollop', '~> 2'
   s.add_runtime_dependency 'colorize', '~> 0'

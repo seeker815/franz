@@ -4,6 +4,7 @@ require 'tempfile'
 require 'fileutils'
 require 'minitest/autorun'
 
+require 'slog'
 require 'deep_merge'
 
 require_relative '../lib/franz'
