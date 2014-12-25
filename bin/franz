@@ -47,10 +47,10 @@ config = Franz::Config.new opts[:config]
 level = :info
 level = :debug if opts[:debug]
 level = :trace if opts[:trace]
-colorize, prettify = false, false
-colorize, prettify = true, true if opts[:log].nil?
+colorize, pretty = false, false
+colorize, pretty = true, true if opts[:log].nil?
 opts[:log] ||= $stdout
-logger = Slog.new out: opts[:log], level: level
+logger = Slog.new out: opts[:log], level: level, colorize: colorize, pretty: pretty
 
 io_bound = config[:output][:bound] || 10_000
 io = Queue.new
