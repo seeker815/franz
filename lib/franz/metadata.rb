@@ -8,6 +8,12 @@ module Franz
   # We don't really do all that much, be humble
   SUMMARY  = 'Aggregate log file events and send them elsewhere'
 
+  # Like the MIT license, but even simpler
+  LICENSE  = 'ISC'
+
+  # Where you should look first
+  HOMEPAGE = 'https://github.com/sczizzo/franz'
+
   # Your benevolent dictator for life
   AUTHOR   = 'Sean Clemmer'
 

@@ -6,12 +6,14 @@ Gem::Specification.new do |s|
   s.name        = 'franz'
   s.version     = Franz::VERSION
   s.platform    = Gem::Platform::RUBY
+  s.license     = Franz::LICENSE
+  s.homepage    = Franz::HOMEPAGE
   s.author      = Franz::AUTHOR
   s.email       = Franz::EMAIL
   s.summary     = Franz::SUMMARY
   s.description = Franz::SUMMARY + '.'
 
-  s.add_runtime_dependency 'slog', '~> 1'
+  s.add_runtime_dependency 'slog', '~> 1.1'
   s.add_runtime_dependency 'bunny', '~> 1'
   s.add_runtime_dependency 'trollop', '~> 2'
   s.add_runtime_dependency 'colorize', '~> 0'
