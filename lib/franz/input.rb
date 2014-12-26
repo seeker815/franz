@@ -132,7 +132,7 @@ module Franz
         end
       end
 
-      log.info event: 'input started', opts: opts
+      log.info event: 'input started'
     end
 
     # Stop everything. Has the effect of draining all the Queues and waiting on

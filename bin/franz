@@ -44,14 +44,17 @@ Thread.abort_on_exception = true # Die quickly and with great ceremony
 
 config = Franz::Config.new opts[:config]
 
+# Set up Slog to send pretty, colored output to STDOUT, compact to FILE
 level = :info
 level = :debug if opts[:debug]
 level = :trace if opts[:trace]
-colorize, pretty = false, false
-colorize, pretty = true, true if opts[:log].nil?
+colorize, prettify = false, false
+colorize, prettify = true, true if opts[:log].nil?
 opts[:log] ||= $stdout
-logger = Slog.new out: opts[:log], level: level, colorize: colorize, pretty: pretty
+logger = Slog.new out: opts[:log], level: level, \
+  colorize: colorize, prettify: prettify
 
+# In Franz, all queues are bounded
 io_bound = config[:output][:bound] || 10_000
 io = Queue.new
 io = SizedQueue.new io_bound if io_bound > 0
