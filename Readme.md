@@ -1,4 +1,4 @@
-# Franz
+# Franz ![Version](https://img.shields.io/gem/v/franz.svg?style=flat-square)
 
 Franz ships line-oriented log files to [RabbitMQ](http://www.rabbitmq.com/).
 Think barebones [logstash](http://logstash.net/) in pure Ruby with more modest
@@ -50,7 +50,13 @@ if you expect your packets to get criss-crossed and you want to reconstruct the
 events in order without relying on timestamps, which you shouldn't.
 
 
-## Usage, Configuration & Operation
+## Usage, Configuration &c.
+
+### Installation
+
+You can build a gem from this repository, or use RubyGems:
+
+    $ gem install franz
 
 ### Usage
 
