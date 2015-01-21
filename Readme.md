@@ -48,3 +48,99 @@ Okay one last feature: Every log event is assigned a sequential identifier
 according to its path (and implicitly, host) in the `@seq` field. This is useful
 if you expect your packets to get criss-crossed and you want to reconstruct the
 events in order without relying on timestamps, which you shouldn't.
+
+
+## Usage, Configuration & Operation
+
+### Usage
+
+Just call for help!
+
+    $ franz --help
+    
+          .--.,
+        ,--.'  \  __  ,-.                 ,---,        ,----,
+        |  | /\/,' ,'/ /|             ,-+-. /  |     .'   .`|
+        :  : :  '  | |' | ,--.--.    ,--.'|'   |  .'   .'  .'
+        :  | |-,|  |   ,'/       \  |   |  ,"' |,---, '   ./
+        |  : :/|'  :  / .--.  .-. | |   | /  | |;   | .'  /
+        |  |  .'|  | '   \__\/: . . |   | |  | |`---' /  ;--,
+        '  : '  ;  : |   ," .--.; | |   | |  |/   /  /  / .`|
+        |  | |  |  , ;  /  /  ,.  | |   | |--'  ./__;     .'
+        |  : \   ---'  ;  :   .'   \|   |/      ;   |  .'
+        |  |,'         |  ,     .-./'---'       `---'
+        `--'            `--`---'                       v1.6.0
+    
+    
+    Aggregate log file events and send them elsewhere
+    
+    Usage: franz [<options>]
+    
+    Options:
+      --config, -c <s>:   Configuration file to use (default: config.json)
+           --debug, -d:   Enable debugging output
+           --trace, -t:   Enable trace output
+         --log, -l <s>:   Log to file, not STDOUT
+         --version, -v:   Print version and exit
+            --help, -h:   Show this message
+
+### Configuration
+
+It's kinda like a JSON version of the Logstash config language:
+
+    {
+      // The asterisk will be replaced with a Unix timestamp
+      "checkpoint": "/etc/franz/franz.*.db",
+
+      // All input configs are files by convention
+      "input": {
+        "configs": [
+
+          // Only "type" and "includes" are required
+          {
+            "type": "example",                          // A nice name
+            "includes": [ "/path/to/your.*.log" ],      // File path globs
+            "excludes": [ "your.bad.*.log" ],           // Basename globs
+            "multiline": "(?i-mx:^[a-z]{3} +\\d{1,2})", // Stringified RegExp
+            "drop": "(?i-mx:^\\d)",                     // Same story.
+            "json?": false                              // JSON-formatted?
+          }
+        ]
+      },
+
+      // Only RabbitMQ is supported at the moment
+      "output": {
+        "rabbitmq": {
+
+          // Must be a consistently-hashed exchange
+          "exchange": {
+            "name": "logs"
+          },
+
+          // See Bunny docs for connection configuration
+          "connection": {
+            "host": "localhost",
+            "vhost": "/logs",
+            "user": "logs",
+            "pass": "logs"
+          }
+        }
+      }
+    }
+
+### Operation
+
+At Blue Jeans, we deploy Franz with Upstart. Here's a minimal config:
+
+    #!upstart
+    description "franz"
+    
+    console log
+    
+    start on startup
+    stop on shutdown
+    respawn
+
+    exec franz
+
+There's a bit more to it than that, though; we actually use Chef.
