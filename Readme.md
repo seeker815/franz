@@ -149,4 +149,5 @@ At Blue Jeans, we deploy Franz with Upstart. Here's a minimal config:
 
     exec franz
 
-There's a bit more to it than that, though; we actually use Chef.
+We actually use the [`bjn_franz` cookbook](https://github.com/sczizzo/bjn-franz-cookbook)
+for Chef.
