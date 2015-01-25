@@ -7,6 +7,8 @@ require_relative 'agg'
 require_relative 'tail'
 require_relative 'watch'
 require_relative 'discover'
+require_relative 'stats'
+
 
 module Franz
 
@@ -46,6 +48,7 @@ module Franz
       }.deep_merge!(opts)
 
       @logger = opts[:logger]
+      @statz = opts[:statz] || Franz::Stats.new
 
       @checkpoint_interval = opts[:checkpoint_interval]
       @checkpoint_path     = opts[:checkpoint].sub('*', '%d')
@@ -91,8 +94,9 @@ module Franz
         deletions: deletions,
         discover_interval: opts[:input][:discover_interval],
         ignore_before: opts[:input][:ignore_before],
-        logger: opts[:logger],
-        known: known
+        logger: @logger,
+        known: known,
+        statz: @statz
 
       @watch = Franz::Watch.new \
         input_config: ic,
@@ -101,9 +105,10 @@ module Franz
         watch_events: watch_events,
         watch_interval: opts[:input][:watch_interval],
         play_catchup?: opts[:input][:play_catchup?],
-        logger: opts[:logger],
+        logger: @logger,
         stats: stats,
-        cursors: cursors
+        cursors: cursors,
+        statz: @statz
 
       @tail = Franz::Tail.new \
         input_config: ic,
@@ -112,8 +117,9 @@ module Franz
         block_size: opts[:input][:block_size],
         line_limit: opts[:input][:line_limit],
         read_limit: opts[:input][:read_limit],
-        logger: opts[:logger],
-        cursors: cursors
+        logger: @logger,
+        cursors: cursors,
+        statz: @statz
 
       @agg = Franz::Agg.new \
         input_config: ic,
@@ -121,8 +127,9 @@ module Franz
         agg_events: opts[:output],
         flush_interval: opts[:input][:flush_interval],
         buffer_limit: opts[:input][:buffer_limit],
-        logger: opts[:logger],
-        seqs: seqs
+        logger: @logger,
+        seqs: seqs,
+        statz: @statz
 
       @stop = false
       @t = Thread.new do

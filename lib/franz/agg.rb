@@ -4,6 +4,7 @@ require 'socket'
 require 'pathname'
 
 require_relative 'sash'
+require_relative 'stats'
 require_relative 'input_config'
 
 module Franz
@@ -39,6 +40,9 @@ module Franz
       @lock   = Hash.new { |h,k| h[k] = Mutex.new }
       @buffer = Franz::Sash.new
       @stop   = false
+
+      @statz = opts[:statz] || Franz::Stats.new
+      @statz.create :num_lines, 0
 
       @t1 = Thread.new do
         until @stop
@@ -127,6 +131,7 @@ module Franz
         raw: event
       multiline = @ic.config(event[:path])[:multiline] rescue nil
       if multiline.nil?
+        @statz.inc :num_lines
         enqueue event[:path], event[:line] unless event[:line].empty?
       else
         lock[event[:path]].synchronize do
@@ -140,7 +145,9 @@ module Franz
           end
           if event[:line] =~ multiline
             buffered = buffer.flush(event[:path])
-            lines    = buffered.map { |e| e[:line] }.join("\n")
+            lines    = buffered.map { |e| e[:line] }
+            @statz.inc :num_lines, lines.length
+            lines    = lines.join("\n")
             enqueue event[:path], lines unless lines.empty?
           end
           buffer.insert event[:path], event
@@ -157,7 +164,9 @@ module Franz
         lock[path].synchronize do
           if force || started - buffer.mtime(path) >= flush_interval
             buffered = buffer.remove(path)
-            lines    = buffered.map { |e| e[:line] }.join("\n")
+            lines    = buffered.map { |e| e[:line] }
+            @statz.inc :num_lines, lines.length
+            lines    = lines.join("\n")
             enqueue path, lines unless lines.empty?
           end
         end

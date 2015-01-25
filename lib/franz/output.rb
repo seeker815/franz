@@ -3,6 +3,9 @@ require 'json'
 require 'bunny'
 require 'deep_merge'
 
+require_relative 'stats'
+
+
 module Franz
 
   # RabbitMQ output for Franz. You must declare an x-consistent-hash type
@@ -31,6 +34,9 @@ module Franz
           }
         }
       }.deep_merge!(opts)
+
+      @statz = opts[:statz] || Franz::Stats.new
+      @statz.create :num_output, 0
 
       @logger = opts[:logger]
 
@@ -84,6 +90,8 @@ module Franz
             JSON::generate(event),
             routing_key: rand.rand(10_000),
             persistent: false
+
+          @statz.inc :num_output
         end
       end
 

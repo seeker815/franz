@@ -2,6 +2,8 @@ require 'set'
 require 'logger'
 require 'shellwords'
 
+require_relative 'stats'
+
 
 # Discover performs half of file existence detection by expanding globs and
 # keeping track of files known to Franz. Discover requires a deletions Queue to
@@ -35,6 +37,9 @@ class Franz::Discover
       config
     end
 
+    @statz = opts[:statz] || Franz::Stats.new
+    @statz.create :num_discovered, 0
+    @statz.create :num_deleted, 0
 
     @stop = false
 
@@ -43,6 +48,7 @@ class Franz::Discover
         until deletions.empty?
           d = deletions.pop
           @known.delete d
+          @statz.inc :num_deleted
           log.debug \
             event: 'discover deleted',
             path: d
@@ -51,6 +57,7 @@ class Franz::Discover
         discover.each do |discovery|
           discoveries.push discovery
           @known.add discovery
+          @statz.inc :num_discovered
           log.debug \
             event: 'discover discovered',
             path: discovery

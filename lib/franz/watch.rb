@@ -2,6 +2,9 @@ require 'set'
 
 require 'logger'
 
+require_relative 'stats'
+
+
 module Franz
 
   # Watch works in tandem with Discover to maintain a list of known files and
@@ -30,6 +33,9 @@ module Franz
       @watch_interval = opts[:watch_interval] || 10
       @stats          = opts[:stats]          || Hash.new
       @logger         = opts[:logger]         || Logger.new(STDOUT)
+
+      @statz = opts[:statz] || Franz::Stats.new
+      @statz.create :num_watched
 
       # Make sure we're up-to-date by rewinding our old stats to our cursors
       if @play_catchup
@@ -94,9 +100,8 @@ module Franz
     end
 
     def watch
-      log.debug \
-        event: 'watch',
-        stats_size: stats.keys.length
+      log.debug event: 'watch'
+      @statz.set :num_watched, stats.keys.length
       deleted = []
 
       stats.keys.each do |path|

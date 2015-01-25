@@ -3,6 +3,9 @@ require 'logger'
 
 require 'eventmachine'
 
+require_relative 'stats'
+
+
 module Franz
 
   # Tail receives low-level file events from a Watch and handles the actual
@@ -33,6 +36,11 @@ module Franz
       @nil_read = Hash.new { |h,k| h[k] = false }
       @buffer = Hash.new { |h, k| h[k] = BufferedTokenizer.new("\n", @line_limit) }
       @stop = false
+
+      @statz = opts[:statz] || Franz::Stats.new
+      @statz.create :num_reads, 0
+      @statz.create :num_rotates, 0
+      @statz.create :num_deletes, 0
 
       @tail_thread = Thread.new do
         handle(watch_events.shift) until @stop
@@ -177,9 +185,11 @@ module Franz
       case event[:name]
 
       when :deleted
+        @statz.inc :num_deletes
         close path
 
       when :replaced, :truncated
+        @statz.inc :num_rotates
         close path
         read path, size
 
@@ -187,6 +197,7 @@ module Franz
         # Ignore read requests after a nil read. We'll wait for the next
         # event that tells us to close the file. Fingers crossed...
         unless @nil_read[path]
+          @statz.inc :num_reads
           read path, size
 
         else # following a nil read
