@@ -55,7 +55,7 @@ module Franz
         end
         log.warn \
           event: 'type unknown',
-          path: path
+          file: path
         @types[path] = nil
         return nil
       end

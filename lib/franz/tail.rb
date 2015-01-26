@@ -79,7 +79,7 @@ module Franz
     def read path, size
       log.trace \
         event: 'read',
-        path: path,
+        file: path,
         size: size
       @cursors[path] ||= 0
       spread = size - @cursors[path]
@@ -92,7 +92,7 @@ module Franz
         if spread.abs > @block_size
           log.warn \
             event: 'large spread',
-            path: path,
+            file: path,
             size: size,
             cursor: @cursors[path],
             spread: spread
@@ -103,7 +103,7 @@ module Franz
       if spread > @read_limit
         log.warn \
           event: 'large read',
-          path: path,
+          file: path,
           size: size,
           cursor: @cursors[path],
           spread: spread
@@ -129,7 +129,7 @@ module Franz
           # :rotated, :deleted event comes along soon after. If it doesn't...
           log.error \
             event: 'nil read',
-            path: path,
+            file: path,
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path]),
@@ -147,7 +147,7 @@ module Franz
         rescue RuntimeError
           log.fatal \
             event: 'buffer full',
-            path: path,
+            file: path,
             size: size,
             cursor: @cursors[path],
             spread: (size - @cursors[path])
@@ -160,7 +160,7 @@ module Franz
       if @cursors[path] < size
         log.fatal \
           event: 'incomplete read',
-          path: path,
+          file: path,
           size: size,
           cursor: @cursors[path],
           spread: (size - @cursors[path])
@@ -170,7 +170,7 @@ module Franz
 
 
     def close path
-      log.trace event: 'close', path: path
+      log.trace event: 'close', file: path
       tail_events.push path: path, line: buffer[path].flush
       @nil_read.delete path
       @cursors[path] = 0

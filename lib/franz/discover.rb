@@ -51,7 +51,7 @@ class Franz::Discover
           @statz.inc :num_deleted
           log.debug \
             event: 'discover deleted',
-            path: d
+            file: d
         end
 
         discover.each do |discovery|
@@ -60,7 +60,7 @@ class Franz::Discover
           @statz.inc :num_discovered
           log.debug \
             event: 'discover discovered',
-            path: discovery
+            file: discovery
         end
         sleep discover_interval
       end

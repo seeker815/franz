@@ -92,7 +92,7 @@ module Franz
       if @ic.drop? path, message
         log.trace \
           event: 'dropped',
-          path: path,
+          file: path,
           message: message
         return
       end
@@ -101,25 +101,25 @@ module Franz
       if t.nil?
         log.trace \
           event: 'enqueue skipped',
-          path: path,
+          file: path,
           message: message
         return
       end
 
       log.trace \
         event: 'enqueue',
-        path: path,
+        file: path,
         message: message
       s = seq path
       m = message.encode 'UTF-8', invalid: :replace, undef: :replace, replace: '?'
 
-      event = { type: t, host: @@host, '@seq' => s }
+      event = { type: t, host: @@host, path: path, '@seq' => s }
 
       if @ic.json? path
         return if m =~ /^#/
-        event = JSON::parse(m).merge(event)
+        event.merge! JSON::parse(m)
       else
-        event.merge! message: m, path: path
+        event.merge! message: m
       end
       agg_events.push event
     end
@@ -139,7 +139,7 @@ module Franz
           if size > @buffer_limit
             log.trace \
               event: 'buffer overflow',
-              path: event[:path],
+              file: event[:path],
               size: size,
               limmit: @buffer_limit
           end

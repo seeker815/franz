@@ -94,7 +94,7 @@ module Franz
       log.trace \
         event: 'enqueue',
         name: name,
-        path: path,
+        file: path,
         size: size
       watch_events.push name: name, path: path, size: size
     end
