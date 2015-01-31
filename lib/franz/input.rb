@@ -178,7 +178,7 @@ module Franz
       File.open(path, 'w') { |f| f.write Marshal.dump(state) }
       old_checkpoints.pop # Keep last two checkpoints
       old_checkpoints.map { |c| FileUtils.rm c }
-      log.info \
+      log.debug \
         event: 'input checkpoint saved'
     end
 
