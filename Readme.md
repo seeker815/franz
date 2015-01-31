@@ -118,17 +118,28 @@ It's kinda like a JSON version of the Logstash config language:
       "output": {
         "rabbitmq": {
 
-          // Must be a consistently-hashed exchange
+          // Must be a consistently-hashed exchange!
           "exchange": {
             "name": "logs"
           },
 
-          // See Bunny docs for connection configuration
+          // See Bunny docs for connection configuration:
+          // http://rubybunny.info/articles/connecting.html
+          // http://rubybunny.info/articles/tls.html
           "connection": {
+            "port": 5672,
             "host": "localhost",
             "vhost": "/logs",
             "user": "logs",
             "pass": "logs"
+
+            // Sample TLS (SSL) attributes:
+            // "port": 5671,
+            // "tls": true,
+            // "tls_cert": "/path/to/client.cert",
+            // "tls_key": "/path/to/client.key",
+            // "tls_ca_certificates": [ "/path/to/cacert.pem" ],
+            // "verify_peer": true
           }
         }
       }
