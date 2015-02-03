@@ -97,6 +97,14 @@ module Franz
         return
       end
 
+      unless @ic.keep? path, message
+        log.trace \
+          event: 'unkept',
+          file: path,
+          message: message
+        return
+      end
+
       t = @ic.type path
       if t.nil?
         log.trace \

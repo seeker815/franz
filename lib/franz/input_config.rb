@@ -4,7 +4,12 @@ module Franz
 
     def initialize configs
       @configs = configs
+      @configs.map! do |c|
+        normalized_config c
+      end
       @types = Hash.new
+      @drop  = Hash.new
+      @keep  = Hash.new
     end
 
     def config path
@@ -13,52 +18,85 @@ module Franz
     end
 
     def json? path
-      begin
-        return config(path)[:json?]
-      rescue
-        return false
-      end
+      config(path)[:json?]
+    rescue
+      false
+    end
+
+    def keep? path, message
+      patterns = keeps_for(path)
+      return true if patterns.nil?
+      return true if patterns.empty?
+      apply_patterns patterns, message
     end
 
     def drop? path, message
-      begin
-        drop = config(path)[:drop]
-      rescue
-        return true # No config found, drop it!
-      end
-      if drop
-        drop = drop.is_a?(Array) ? drop : [ drop ]
-        drop.each do |pattern|
-          return true if message =~ pattern
+      patterns = drops_for(path)
+      return true if patterns.nil?
+      return false if patterns.empty?
+      apply_patterns patterns, message
+    end
+
+    def type path
+      @types.fetch path
+    rescue KeyError
+      configs.each do |config|
+        type = config[:type] if config[:includes].any? { |glob|
+          included = File.fnmatch? glob, path
+          excludes = !config[:excludes].nil?
+          excluded = excludes && config[:excludes].any? { |exlude|
+            File.fnmatch? exlude, File::basename(path)
+          }
+          included && !excluded
+        }
+        unless type.nil?
+          @types[path] = type
+          return type
         end
+      end
+      log.warn \
+        event: 'type unknown',
+        file: path
+      @types[path] = nil
+    end
+
+
+  private
+    def normalized_config config
+      config[:keep] = realize_regexps config[:keep]
+      config[:drop] = realize_regexps config[:drop]
+      config
+    end
+
+    def realize_regexps ps
+      return [] if ps.nil?
+      ps = ps.is_a?(Array) ? ps : [ ps ]
+      ps.map do |pattern|
+        Regexp.new pattern
+      end
+    end
+
+    def apply_patterns patterns, message
+      return true if patterns.nil?
+      patterns.each do |pattern|
+        return true if message =~ pattern
       end
       return false
     end
 
-    def type path
-      begin
-        @types.fetch path
-      rescue KeyError
-        configs.each do |config|
-          type = config[:type] if config[:includes].any? { |glob|
-            included = File.fnmatch? glob, path
-            excludes = !config[:excludes].nil?
-            excluded = excludes && config[:excludes].any? { |exlude|
-              File.fnmatch? exlude, File::basename(path)
-            }
-            included && !excluded
-          }
-          unless type.nil?
-            @types[path] = type
-            return type
-          end
-        end
-        log.warn \
-          event: 'type unknown',
-          file: path
-        @types[path] = nil
-        return nil
-      end
+    def drops_for path
+      patterns_for path, :drop, @drop
     end
+
+    def keeps_for path
+      patterns_for path, :keep, @keep
+    end
+
+    def patterns_for path, kind, memo
+      memo.fetch path
+    rescue KeyError
+      memo[path] = config(path)[kind]
+    end
+
   end
 end

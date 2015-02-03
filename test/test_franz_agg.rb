@@ -74,6 +74,37 @@ class TestFranzAgg < MiniTest::Test
     assert seqs[path] == 2 # should be two lines
   end
 
+  def test_handles_singular_keep
+    sample = "keep this\nbut not this\n"
+    tmp    = tempfile %w[ test1 .log ]
+    tmp.write sample
+    tmp.flush
+    tmp.close
+    start_agg keep: /^keep/
+    sleep 3
+    seqs = stop_agg
+    path = realpath tmp.path
+    assert seqs.include?(path)
+    assert_equal sample.lines.first.strip, @agg_events.shift[:message]
+    assert seqs[path] == 1 # should be one line
+  end
+
+  def test_handles_plural_keep
+    sample = "keep this\nbut not this\noh this too\nreally\n"
+    tmp    = tempfile %w[ test1 .log ]
+    tmp.write sample
+    tmp.flush
+    tmp.close
+    start_agg keep: [ /^keep/, /^oh/ ]
+    sleep 5
+    seqs = stop_agg
+    path = realpath tmp.path
+    assert seqs.include?(path)
+    assert_equal sample.lines[0].strip, @agg_events.shift[:message]
+    assert_equal sample.lines[2].strip, @agg_events.shift[:message]
+    assert seqs[path] == 2 # should be two lines
+  end
+
 private
   def tempfile prefix=nil
     Tempfile.new prefix, @tmpdir
