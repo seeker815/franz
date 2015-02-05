@@ -13,12 +13,12 @@ Gem::Specification.new do |s|
   s.summary     = Franz::SUMMARY
   s.description = Franz::SUMMARY + '.'
 
-  s.add_runtime_dependency 'slog', '~> 1.1'
-  s.add_runtime_dependency 'bunny', '~> 1'
-  s.add_runtime_dependency 'trollop', '~> 2'
-  s.add_runtime_dependency 'colorize', '~> 0'
-  s.add_runtime_dependency 'deep_merge', '~> 1'
-  s.add_runtime_dependency 'eventmachine', '~> 1'
+  s.add_runtime_dependency 'slog', '~> 1.1.0'
+  s.add_runtime_dependency 'bunny', '~> 1.6.0'
+  s.add_runtime_dependency 'trollop', '~> 2.1.0'
+  s.add_runtime_dependency 'colorize', '~> 0.7.0'
+  s.add_runtime_dependency 'deep_merge', '~> 1.0.0'
+  s.add_runtime_dependency 'eventmachine', '~> 1.0.0'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- test/*`.split("\n")
