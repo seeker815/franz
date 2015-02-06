@@ -97,6 +97,11 @@ It's kinda like a JSON version of the Logstash config language:
     {
       // The asterisk will be replaced with a Unix timestamp
       "checkpoint": "/etc/franz/franz.*.db",
+      "checkpoint_interval": 30, // Seconds
+
+      // Kill Franz for consuming too much memory
+      "memory_limit": 2000000, // Bytes
+      "memory_limit_interval": 5, // Seconds
 
       // All input configs are files by convention
       "input": {
@@ -111,7 +116,20 @@ It's kinda like a JSON version of the Logstash config language:
             "drop": "(?i-mx:^\\d)",                     // Same story.
             "json?": false                              // JSON-formatted?
           }
-        ]
+        ],
+
+        // Advanced configuration (optional)
+        "discover_interval": 60, // Period to check for new files
+        "discover_bound": 25000, // Limit discovery queue size
+        "watch_interval": 2,     // Period to watch for file changes
+        "watch_bound": 15000,    // Limit watch queue size
+        "flush_interval": 45,    // Period to flush multiline events
+        "block_size": 102400,    // Block size for tail reads
+        "read_limit": 512000,    // Maximum size for a read
+        "line_limit": 512000,    // Maximum size for a line
+        "buffer_limit": 300,     // Maximum lines for multiline
+        "tail_bound": 15000,     // Limit tail queue size
+        "play_catchup?": true    // Pick up where we left off
       },
 
       // Only RabbitMQ is supported at the moment
@@ -141,7 +159,12 @@ It's kinda like a JSON version of the Logstash config language:
             // "tls_ca_certificates": [ "/path/to/cacert.pem" ],
             // "verify_peer": true
           }
-        }
+        },
+
+        // Advanced configuration (optional)
+        "stats_interval": 60, // Emit statistics periodically
+        "bound": 25000,       // Limit output queue size
+        "tags": [ "franz" ]   // Add a tag field to events
       }
     }
 
