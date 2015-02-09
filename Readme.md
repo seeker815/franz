@@ -103,6 +103,15 @@ It's kinda like a JSON version of the Logstash config language:
       "memory_limit": 2000000, // Bytes
       "memory_limit_interval": 5, // Seconds
 
+      // Logger settings: https://github.com/sczizzo/slog
+      "slog": {
+        "timestamp_field": "timestamp",
+        "timestamp_format": "%Y-%m-%dT%H:%M:%S.%L%z",
+        "message_field": "event",
+        "shift_age": 7,
+        "shift_size": 1048576
+      },
+
       // All input configs are files by convention
       "input": {
         "configs": [
