@@ -9,9 +9,9 @@ doing the bulk of the log processing. Using this setup, RabbitMQ and logstash
 may be scaled and restarted independently, so new configurations may be applied
 without interrupting those precious log hosts.
 
-Even so, Franz was designed to be interruped. Before exiting, Franz drains his
-event queues and write any "leftover" state disk. When he's called next, he picks
-up those leftovers and continues as if he were paused.
+Even so, Franz was designed to be interruped. Before exiting, Franz keeps a log
+of checkpoints, which are used to restore application state in the event of a
+crash.
 
 He's also got a couple of improvements over logstash. Let's discuss!
 
@@ -19,7 +19,7 @@ He's also got a couple of improvements over logstash. Let's discuss!
 ## Improvements
 
 First let me say logstash is an awesome hunk of software thanks to the hard
-work of Jordan Sissel and the entire logstash community. Keep it up!
+work of Jordan Sissel and the entire logstash community.
 
 ### Multiline Flush
 
@@ -141,8 +141,12 @@ It's kinda like a JSON version of the Logstash config language:
         "play_catchup?": true    // Pick up where we left off
       },
 
-      // Only RabbitMQ is supported at the moment
+
+      // If you provide both RabbitMQ and Kafka configurations, Franz will
+      // prefer RabbitMQ. If you provide neither, events are printed to STDOUT
       "output": {
+
+        // RabbitMQ
         "rabbitmq": {
 
           // Must be a consistently-hashed exchange!
@@ -170,6 +174,20 @@ It's kinda like a JSON version of the Logstash config language:
           }
         },
 
+        // Kafka (experimental)
+        "kafka": {
+          "client_id": "hostname",
+          "cluster": [ "localhost:9092" ],
+          "type": "sync",
+          "compression_codec": "snappy"
+          "metadata_refresh_interval_ms": 600000,
+          "max_send_retries": 3,
+          "retry_backoff_ms": 100,
+          "required_acks": 0,
+          "ack_timeout_ms": 1500,
+          "socket_timeout_ms": 10000
+        }
+
         // Advanced configuration (optional)
         "stats_interval": 60, // Emit statistics periodically
         "bound": 25000,       // Limit output queue size
@@ -194,3 +212,13 @@ At Blue Jeans, we deploy Franz with Upstart. Here's a minimal config:
 
 We actually use the [`bjn_franz` cookbook](https://github.com/sczizzo/bjn-franz-cookbook)
 for Chef.
+
+### Changelog
+
+#### v2.0.0
+
+- Added new outputs: `StdOut`, `Kafka` (experimental)
+
+#### v1
+
+Intial implementation of the file-to-RabbitMQ pipeline
