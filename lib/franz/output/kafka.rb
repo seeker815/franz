@@ -25,6 +25,7 @@ module Franz
           tags: [],
           input: [],
           output: {
+            topic: 'franz',
             flush_interval: 10,
             flush_size: 500,
             client_id: @@host,
@@ -49,6 +50,7 @@ module Franz
 
         @flush_size = opts[:output].delete :flush_size
         @flush_interval = opts[:output].delete :flush_interval
+        @topic = opts[:output].delete :topic
 
         kafka_brokers = opts[:output].delete(:brokers) || %w[ localhost:9092 ]
         kafka_client_id = opts[:output].delete :client_id
@@ -67,15 +69,15 @@ module Franz
 
         @thread = Thread.new do
           loop do
-            ready_messages = []
             @lock.synchronize do
               ready_messages = @messages
               @messages = []
+              @kafka.send_messages ready_messages unless ready_messages.empty?
+              log.debug \
+                event: 'periodic flush',
+                num_messages: ready_messages.size
             end
-            @kafka.send_messages ready_messages unless ready_messages.empty?
-            log.debug \
-              event: 'periodic flush',
-              num_messages: ready_messages.size
+
             sleep @flush_interval
           end
         end
@@ -90,16 +92,19 @@ module Franz
               raw: event
 
             payload = JSON::generate(event)
-            @messages << Poseidon::MessageToSend.new(event[:type].to_s, payload)
 
-            @statz.inc :num_output
+            @lock.synchronize do
+              @messages << Poseidon::MessageToSend.new(@topic, payload)
 
-            if @messages.size >= @flush_size
-              @kafka.send_messages @messages
-              log.debug \
-                event: 'flush',
-                num_messages: @messages.size
-              @messages = []
+              @statz.inc :num_output
+
+              if @messages.size >= @flush_size
+                @kafka.send_messages @messages
+                log.debug \
+                  event: 'flush',
+                  num_messages: @messages.size
+                @messages = []
+              end
             end
 
           end
