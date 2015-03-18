@@ -41,11 +41,7 @@ SNAPPY_VERSION = '0.0.11'
 EM_VERSION = '1.0.5'
 
 desc 'Package Franz into binaries'
-task package: %w[
-  package:linux:x86
-  package:linux:x86_64
-  package:osx
-]
+task package: %w[ package:linux package:osx ]
 
 namespace :package do
   desc 'Package Franz for Linux (x86_64)'
@@ -81,11 +77,11 @@ namespace :package do
       sh "mv pkg/tmp/vendor pkg"
     end
     sh "rm -rf pkg/tmp"
-    # sh "rm -f pkg/vendor/*/*/cache/*"
-    # sh "rm -rf pkg/vendor/ruby/*/extensions"
-    # sh "find pkg/vendor/ruby/*/gems -name '*.so' | xargs rm -f"
-    # sh "find pkg/vendor/ruby/*/gems -name '*.bundle' | xargs rm -f"
-    # sh "find pkg/vendor/ruby/*/gems -name '*.o' | xargs rm -f"
+    sh "rm -f pkg/vendor/*/*/cache/*"
+    sh "rm -rf pkg/vendor/ruby/*/extensions"
+    sh "find pkg/vendor/ruby/*/gems -name '*.so' | xargs rm -f"
+    sh "find pkg/vendor/ruby/*/gems -name '*.bundle' | xargs rm -f"
+    sh "find pkg/vendor/ruby/*/gems -name '*.o' | xargs rm -f"
   end
 end
 
@@ -102,19 +98,19 @@ file "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-osx.tar.gz" do
 end
 
 file "pkg/snappy-#{SNAPPY_VERSION}-linux-x86_64.tar.gz" do
-  download_tarball 'snappy', 'linux-x86_64'
+  download_extension 'snappy', 'linux-x86_64'
 end
 
 file "pkg/eventmachine-#{EM_VERSION}-linux-x86_64.tar.gz" do
-  download_tarball 'eventmachine', 'linux-x86_64'
+  download_extension 'eventmachine', 'linux-x86_64'
 end
 
 file "pkg/snappy-#{SNAPPY_VERSION}-osx.tar.gz" do
-  download_tarball 'snappy', 'osx'
+  download_extension 'snappy', 'osx'
 end
 
 file "pkg/eventmachine-#{EM_VERSION}-osx.tar.gz" do
-  download_tarball 'eventmachine', 'osx'
+  download_extension 'eventmachine', 'osx'
 end
 
 def create_package target
@@ -138,7 +134,7 @@ def create_package target
   end
 end
 
-def download_tarball name, platform
+def download_extension name, platform
   version = case name
   when 'snappy' ; SNAPPY_VERSION
   when 'eventmachine' ; EM_VERSION
