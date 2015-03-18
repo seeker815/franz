@@ -44,15 +44,13 @@ Rake::VersionTask.new
 # then extracting the resulting gem and its extensions into a tarball:
 #
 # target="linux-x86_64" # or "osx"
-# for ext in snappy-0.0.11 eventmachine-1.0.5 ; do
+# for ext in snappy-0.0.11 eventmachine-1.0.4 ; do
 #   name="${ext%%\-*}"
 #   version="${ext##*\-}"
 #   save="$(pwd)/$name"
 #   out="$(pwd)/$ext-$target.tar.gz"
 #   pushd franz/vendor/ruby
-#     find */extensions/*/*/$name* > $save
-#     find */gems/$name* >> $save
-#     tar -cvzf $out `cat $save`
+#     tar -cvzf $out $(find . | grep $name | grep extensions)
 #   popd
 #   rm -f $save
 # done

@@ -23,7 +23,7 @@ module Franz
   # Bundled extensions
   TRAVELING_RUBY_VERSION = '20150210-2.2.0'
   SNAPPY_VERSION = '0.0.11'
-  EM_VERSION = '1.0.5'
+  EM_VERSION = '1.0.4'
 
   # Every project deserves its own ASCII art
   ART      = <<-'EOART' % VERSION
