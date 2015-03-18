@@ -75,7 +75,7 @@ Just call for help!
         |  | |  |  , ;  /  /  ,.  | |   | |--'  ./__;     .'
         |  : \   ---'  ;  :   .'   \|   |/      ;   |  .'
         |  |,'         |  ,     .-./'---'       `---'
-        `--'            `--`---'                       v1.6.0
+        `--'            `--`---'                       v2.1.0
     
     
     Aggregate log file events and send them elsewhere
@@ -83,7 +83,7 @@ Just call for help!
     Usage: franz [<options>]
     
     Options:
-      --config, -c <s>:   Configuration file to use (default: config.json)
+      --config, -c <s>:   Configuration file to use
            --debug, -d:   Enable debugging output
            --trace, -t:   Enable trace output
          --log, -l <s>:   Log to file, not STDOUT
@@ -208,7 +208,7 @@ At Blue Jeans, we deploy Franz with Upstart. Here's a minimal config:
     stop on shutdown
     respawn
 
-    exec franz
+    exec franz --config /path/to/franz.json
 
 We actually use the [`bjn_franz` cookbook](https://github.com/sczizzo/bjn-franz-cookbook)
 for Chef.

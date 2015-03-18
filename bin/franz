@@ -9,23 +9,10 @@ require 'trollop'
 require 'franz'
 
 
-# If we find a local config, try to use it
-# N.B. We'll fall back to the last guy listed here
-config = nil
-%w[
-  config.json
-  %{HOME}/.franz.json
-  /etc/franz/franz.json
-].each do |path|
-  config = path % ENV rescue next
-  break if File.exist? config
-end
-
-
 # Franz really only accepts a config file as an option, and that config file
 # has got to conform to a certain format. If you're unsure, just look at the
 # default options hashes in both Franz::Input and Franz::Output
-opts = Trollop::options(ARGV) do
+parser = Trollop::Parser.new do
   version Franz::VERSION
   banner Franz::ART + "\n\n" + <<-EOS.gsub(/^    /, '')
     #{Franz::SUMMARY}
@@ -34,11 +21,17 @@ opts = Trollop::options(ARGV) do
 
     Options:
   EOS
-  opt :config, 'Configuration file to use', type: :string, default: config
+  opt :config, 'Configuration file to use', type: :string, required: true
   opt :debug,  'Enable debugging output', default: false
   opt :trace,  'Enable trace output', default: false
   opt :log,    'Log to file, not STDOUT', type: :string, default: nil
 end
+
+opts = Trollop.with_standard_exception_handling(parser) do
+  raise Trollop::HelpNeeded if ARGV.empty?
+  parser.parse ARGV
+end
+
 
 Thread.abort_on_exception = true # Die quickly and with great ceremony
 
