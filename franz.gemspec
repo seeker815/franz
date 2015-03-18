@@ -21,8 +21,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'poseidon', '~> 0.0.5'
 
   # Bundled libs
-  s.add_runtime_dependency 'eventmachine', '= 1.0.5'
-  s.add_runtime_dependency 'snappy', '= 0.0.11'
+  s.add_runtime_dependency 'snappy', '= %s' % Franz::SNAPPY_VERSION
+  s.add_runtime_dependency 'eventmachine', '= %s' % Franz::EM_VERSION
 
   s.files         = Dir['{bin,lib}/**/*'] + %w[ LICENSE Readme.md VERSION ]
   s.test_files    = Dir['test/**/*']

@@ -20,6 +20,11 @@ module Franz
   # Turn here to strangle your dictator
   EMAIL    = 'sclemmer@bluejeans.com'
 
+  # Bundled extensions
+  TRAVELING_RUBY_VERSION = '20150210-2.1.5'
+  SNAPPY_VERSION = '0.0.11'
+  EM_VERSION = '1.0.5'
+
   # Every project deserves its own ASCII art
   ART      = <<-'EOART' % VERSION
 
