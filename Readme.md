@@ -215,6 +215,10 @@ for Chef.
 
 ### Changelog
 
+#### v2.1.0
+
+- Self-contained packages now available for OS X and Linux thanks to [Traveling Ruby](http://phusion.github.io/traveling-ruby) and [FPM](https://github.com/jordansissel/fpm).
+
 #### v2.0.0
 
 - Added new outputs: `StdOut`, `Kafka` (experimental)
