@@ -121,7 +121,7 @@ def create_package target
   sh "cp -R lib #{package_dir}/franz/app"
   sh "mkdir #{package_dir}/franz/ruby"
   sh "tar -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/ruby"
-  sh "cp pkg/wrapper.sh #{package_dir}/franz.sh"
+  sh "cp pkg/franz.sh #{package_dir}/franz.sh"
   sh "cp -pR pkg/vendor #{package_dir}/franz/vendor"
   sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib #{package_dir}/franz/vendor"
   sh "mkdir #{package_dir}/franz/vendor/.bundle"
@@ -129,7 +129,9 @@ def create_package target
   sh "tar -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz"
   sh "tar -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/franz"
   sh %Q~
-    which fpm && fpm --verbose \
+    which lsb_release || exit 0
+    which fpm || exit 0
+    fpm --verbose \
       -s dir -t deb -C #{package_dir} \
       -n franz -v #{Franz::VERSION} \
       --license ISC \
@@ -137,7 +139,7 @@ def create_package target
       --maintainer "Sean Clemmer <sclemmer@bluejeans.com>" \
       --vendor "Blue Jeans Network" \
       franz.sh=/usr/local/bin/franz \
-      franz=/usr/local/lib
+      franz=/opt
   ~
   if !ENV['DIR_ONLY']
     sh "tar -czf #{package_dir}.tar.gz #{package_dir}"
