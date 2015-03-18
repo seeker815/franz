@@ -18,9 +18,11 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'trollop', '~> 2.1.0'
   s.add_runtime_dependency 'colorize', '~> 0.7.0'
   s.add_runtime_dependency 'deep_merge', '~> 1.0.0'
-  s.add_runtime_dependency 'eventmachine', '= 1.0.5'
   s.add_runtime_dependency 'poseidon', '~> 0.0.5'
-  s.add_runtime_dependency 'snappy', '~> 0.0.11'
+
+  # Bundled libs
+  s.add_runtime_dependency 'eventmachine', '= 1.0.5'
+  s.add_runtime_dependency 'snappy', '= 0.0.11'
 
   s.files         = Dir['{bin,lib}/**/*'] + %w[ LICENSE Readme.md VERSION ]
   s.test_files    = Dir['test/**/*']

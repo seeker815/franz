@@ -116,18 +116,17 @@ end
 def create_package target
   package_dir = "franz-#{Franz::VERSION}-#{target}"
   sh "rm -rf #{package_dir}"
-  sh "mkdir -p #{package_dir}/franz/app"
-  sh "cp -R bin #{package_dir}/franz/app"
-  sh "cp -R lib #{package_dir}/franz/app"
+  sh "mkdir -p #{package_dir}/franz"
+  sh "cp -R bin #{package_dir}/franz"
   sh "mkdir #{package_dir}/franz/ruby"
   sh "tar -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/ruby"
   sh "cp pkg/franz.sh #{package_dir}/franz.sh"
   sh "cp -pR pkg/vendor #{package_dir}/franz/vendor"
-  sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib #{package_dir}/franz/vendor"
+  sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock lib #{package_dir}/franz/vendor"
   sh "mkdir #{package_dir}/franz/vendor/.bundle"
   sh "cp pkg/bundler-config #{package_dir}/franz/vendor/.bundle/config"
-  sh "tar -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz"
-  sh "tar -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/franz"
+  sh "tar -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor --strip 1"
+  sh "tar -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor --strip 1"
   sh %Q~
     which lsb_release || exit 0
     which fpm || exit 0
