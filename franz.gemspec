@@ -22,8 +22,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'poseidon', '~> 0.0.5'
   s.add_runtime_dependency 'snappy', '~> 0.0.11'
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- test/*`.split("\n")
-  s.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File::basename(f) }
+  s.files         = Dir['{bin,lib}/**/*'] + %w[ LICENSE Readme.md VERSION ]
+  s.test_files    = Dir['test/**/*']
+  s.executables   = %w[ franz ]
   s.require_paths = %w[ lib ]
 end

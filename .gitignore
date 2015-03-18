@@ -1,4 +1,5 @@
 *~
+*.gz
 *.gem
 *.log
 *.out
@@ -9,6 +10,8 @@
 .DS_Store
 .yardoc
 doc
-pkg
 config.json
 Gemfile.lock
+pkg/vendor
+pkg/tmp
+franz-*
