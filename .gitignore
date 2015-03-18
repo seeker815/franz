@@ -1,6 +1,7 @@
 *~
 *.gz
 *.gem
+*.deb
 *.log
 *.out
 *.pid

@@ -116,18 +116,29 @@ end
 def create_package target
   package_dir = "franz-#{Franz::VERSION}-#{target}"
   sh "rm -rf #{package_dir}"
-  sh "mkdir -p #{package_dir}/.franz/app"
-  sh "cp -R bin #{package_dir}/.franz/app"
-  sh "cp -R lib #{package_dir}/.franz/app"
-  sh "mkdir #{package_dir}/.franz/ruby"
-  sh "tar -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/.franz/ruby"
-  sh "cp pkg/wrapper.sh #{package_dir}/franz"
-  sh "cp -pR pkg/vendor #{package_dir}/.franz/vendor"
-  sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib #{package_dir}/.franz/vendor"
-  sh "mkdir #{package_dir}/.franz/vendor/.bundle"
-  sh "cp pkg/bundler-config #{package_dir}/.franz/vendor/.bundle/config"
-  sh "tar -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/.franz"
-  sh "tar -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/.franz"
+  sh "mkdir -p #{package_dir}/franz/app"
+  sh "cp -R bin #{package_dir}/franz/app"
+  sh "cp -R lib #{package_dir}/franz/app"
+  sh "mkdir #{package_dir}/franz/ruby"
+  sh "tar -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/ruby"
+  sh "cp pkg/wrapper.sh #{package_dir}/franz.sh"
+  sh "cp -pR pkg/vendor #{package_dir}/franz/vendor"
+  sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib #{package_dir}/franz/vendor"
+  sh "mkdir #{package_dir}/franz/vendor/.bundle"
+  sh "cp pkg/bundler-config #{package_dir}/franz/vendor/.bundle/config"
+  sh "tar -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz"
+  sh "tar -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/franz"
+  sh %Q~
+    which fpm && fpm --verbose \
+      -s dir -t deb -C #{package_dir} \
+      -n franz -v #{Franz::VERSION} \
+      --license ISC \
+      --description "Franz" \
+      --maintainer "Sean Clemmer <sclemmer@bluejeans.com>" \
+      --vendor "Blue Jeans Network" \
+      franz.sh=/usr/local/bin/franz \
+      franz=/usr/local/lib
+  ~
   if !ENV['DIR_ONLY']
     sh "tar -czf #{package_dir}.tar.gz #{package_dir}"
     sh "rm -rf #{package_dir}"

@@ -1,9 +1,7 @@
 #!/bin/bash
 set -e
-SELFDIR="`dirname \"$0\"`"
-SELFDIR="`cd \"$SELFDIR\" && pwd`"
-[ -z "$FRANZ_ROOT" ] && ROOT="$SELFDIR/.franz"
-[ -n "$FRANZ_ROOT" ] && ROOT="$FRANZ_ROOT"
-export BUNDLE_GEMFILE="$ROOT/vendor/Gemfile"
+[ -z "$FRANZ_ROOT" -a -d franz ] && FRANZ_ROOT=franz
+FRANZ_ROOT=${FRANZ_ROOT:-/usr/local/lib/franz}
+export BUNDLE_GEMFILE="$FRANZ_ROOT/vendor/Gemfile"
 unset BUNDLE_IGNORE_CONFIG
-exec "$ROOT/ruby/bin/ruby" -rbundler/setup "$ROOT/app/bin/franz" $@
+exec "$FRANZ_ROOT/ruby/bin/ruby" -rbundler/setup "$FRANZ_ROOT/app/bin/franz" $@
