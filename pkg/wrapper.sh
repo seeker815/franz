@@ -2,6 +2,8 @@
 set -e
 SELFDIR="`dirname \"$0\"`"
 SELFDIR="`cd \"$SELFDIR\" && pwd`"
-export BUNDLE_GEMFILE="$SELFDIR/.vendor/Gemfile"
+[ -z "$FRANZ_ROOT" ] && ROOT="$SELFDIR/.franz"
+[ -n "$FRANZ_ROOT" ] && ROOT="$FRANZ_ROOT"
+export BUNDLE_GEMFILE="$ROOT/vendor/Gemfile"
 unset BUNDLE_IGNORE_CONFIG
-exec "$SELFDIR/.ruby/bin/ruby" -rbundler/setup "$SELFDIR/.app/bin/franz" $@
+exec "$ROOT/ruby/bin/ruby" -rbundler/setup "$ROOT/app/bin/franz" $@

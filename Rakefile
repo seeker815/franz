@@ -37,6 +37,8 @@ Rake::VersionTask.new
 require 'franz'
 
 TRAVELING_RUBY_VERSION = '20150210-2.1.5'
+SNAPPY_VERSION = '0.0.11'
+EM_VERSION = '1.0.5'
 
 desc 'Package Franz into binaries'
 task package: %w[
@@ -46,28 +48,22 @@ task package: %w[
 ]
 
 namespace :package do
-  namespace :linux do
-    desc 'Package Franz for Linux x86'
-    task x86: [
-      :bundle_install,
-      "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-linux-x86.tar.gz"
-    ] do
-      create_package 'linux-x86'
-    end
-
-    desc 'Package Franz for Linux x86_64'
-    task x86_64: [
-      :bundle_install,
-      "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-linux-x86_64.tar.gz"
-    ] do
-      create_package 'linux-x86_64'
-    end
+  desc 'Package Franz for Linux (x86_64)'
+  task linux: [
+    :bundle_install,
+    "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-linux-x86_64.tar.gz",
+    "pkg/snappy-#{SNAPPY_VERSION}-linux-x86_64.tar.gz",
+    "pkg/eventmachine-#{EM_VERSION}-linux-x86_64.tar.gz"
+  ] do
+    create_package 'linux-x86_64'
   end
 
   desc 'Package Franz for OS X'
   task osx: [
     :bundle_install,
-    "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-osx.tar.gz"
+    "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-osx.tar.gz",
+    "pkg/snappy-#{SNAPPY_VERSION}-osx.tar.gz",
+    "pkg/eventmachine-#{EM_VERSION}-osx.tar.gz"
   ] do
     create_package 'osx'
   end
@@ -77,14 +73,19 @@ namespace :package do
     if RUBY_VERSION !~ /^2\.1\./
       abort "You can only 'bundle install' using Ruby 2.1, because that's what Traveling Ruby uses."
     end
-    sh "rm -rf pkg/tmp"
+    sh "rm -rf pkg/tmp pkg/vendor"
     sh "mkdir pkg/tmp"
-    sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock {bin,lib} pkg/tmp"
+    sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib pkg/tmp"
     Bundler.with_clean_env do
-      sh "cd pkg/tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path ../vendor --without development"
+      sh "cd pkg/tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path vendor --without development"
+      sh "mv pkg/tmp/vendor pkg"
     end
     sh "rm -rf pkg/tmp"
-    sh "rm -f pkg/vendor/*/*/cache/*"
+    # sh "rm -f pkg/vendor/*/*/cache/*"
+    # sh "rm -rf pkg/vendor/ruby/*/extensions"
+    # sh "find pkg/vendor/ruby/*/gems -name '*.so' | xargs rm -f"
+    # sh "find pkg/vendor/ruby/*/gems -name '*.bundle' | xargs rm -f"
+    # sh "find pkg/vendor/ruby/*/gems -name '*.o' | xargs rm -f"
   end
 end
 
@@ -100,26 +101,55 @@ file "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-osx.tar.gz" do
   download_runtime 'osx'
 end
 
+file "pkg/snappy-#{SNAPPY_VERSION}-linux-x86_64.tar.gz" do
+  download_tarball 'snappy', 'linux-x86_64'
+end
+
+file "pkg/eventmachine-#{EM_VERSION}-linux-x86_64.tar.gz" do
+  download_tarball 'eventmachine', 'linux-x86_64'
+end
+
+file "pkg/snappy-#{SNAPPY_VERSION}-osx.tar.gz" do
+  download_tarball 'snappy', 'osx'
+end
+
+file "pkg/eventmachine-#{EM_VERSION}-osx.tar.gz" do
+  download_tarball 'eventmachine', 'osx'
+end
+
 def create_package target
   package_dir = "franz-#{Franz::VERSION}-#{target}"
   sh "rm -rf #{package_dir}"
-  sh "mkdir -p #{package_dir}/.app"
-  sh "cp -R bin #{package_dir}/.app"
-  sh "cp -R lib #{package_dir}/.app"
-  sh "mkdir #{package_dir}/.ruby"
-  sh "tar -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/.ruby"
+  sh "mkdir -p #{package_dir}/.franz/app"
+  sh "cp -R bin #{package_dir}/.franz/app"
+  sh "cp -R lib #{package_dir}/.franz/app"
+  sh "mkdir #{package_dir}/.franz/ruby"
+  sh "tar -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/.franz/ruby"
   sh "cp pkg/wrapper.sh #{package_dir}/franz"
-  sh "cp -pR pkg/vendor #{package_dir}/.vendor"
-  sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock {bin,lib} #{package_dir}/.vendor/"
-  sh "mkdir #{package_dir}/.vendor/.bundle"
-  sh "cp pkg/bundler-config #{package_dir}/.vendor/.bundle/config"
+  sh "cp -pR pkg/vendor #{package_dir}/.franz/vendor"
+  sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib #{package_dir}/.franz/vendor"
+  sh "mkdir #{package_dir}/.franz/vendor/.bundle"
+  sh "cp pkg/bundler-config #{package_dir}/.franz/vendor/.bundle/config"
+  sh "tar -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/.franz"
+  sh "tar -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/.franz"
   if !ENV['DIR_ONLY']
     sh "tar -czf #{package_dir}.tar.gz #{package_dir}"
     sh "rm -rf #{package_dir}"
   end
 end
 
+def download_tarball name, platform
+  version = case name
+  when 'snappy' ; SNAPPY_VERSION
+  when 'eventmachine' ; EM_VERSION
+  end
+  url = 'https://dl.dropboxusercontent.com/u/431514/%s-%s-%s.tar.gz' % [
+    name, version, platform
+  ]
+  sh 'cd pkg && curl -L -O --fail ' + url
+end
+
 def download_runtime target
-  sh "cd pkg && curl -L -O --fail " +
+  sh 'cd pkg && curl -L -O --fail ' +
     "http://d6r77u77i8pq3.cloudfront.net/releases/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz"
 end
