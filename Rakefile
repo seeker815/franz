@@ -59,6 +59,12 @@ require_relative 'lib/franz/metadata'
 
 include Franz
 
+`which gtar` # Necessary on OS X
+TAR = $?.exitstatus.zero? ? 'gtar' : 'tar'
+
+desc 'Package Franz for Linux and OS X'
+task packages: %w[ package:linux package:osx ]
+
 namespace :package do
   desc 'Package Franz for Linux (x86_64)'
   task linux: [
@@ -136,19 +142,20 @@ def create_package target
   package_file = ::File.join Dir.pwd, 'pkg', "#{package_name}.tar.gz"
   package_dir = ::File.join Dir.pwd, 'pkg', package_name
   output = ::File.join Dir.pwd, 'pkg', "franz_#{VERSION}_amd64.deb"
-  sh "rm -rf #{package_dir} #{output}"
+  sh "rm -rf #{package_dir}"
+  sh "rm -rf #{output}" if target =~ /linux/
   sh "mkdir -p #{package_dir}/franz"
   sh "cp -R bin #{package_dir}/franz"
   sh "mkdir #{package_dir}/franz/ruby"
-  sh "tar -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/ruby"
+  sh "#{TAR} -xzf pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/ruby"
   sh "cp pkg/franz.sh #{package_dir}"
   sh "cp -pR pkg/vendor #{package_dir}/franz/vendor"
   sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock lib #{package_dir}/franz/vendor"
   sh "mkdir #{package_dir}/franz/vendor/.bundle"
   sh "cp pkg/bundler-config #{package_dir}/franz/vendor/.bundle/config"
   if !ENV['NO_EXT']
-    sh "tar -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor/ruby"
-    sh "tar -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor/ruby"
+    sh "#{TAR} -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor/ruby"
+    sh "#{TAR} -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor/ruby"
   end
   if !ENV['NO_FPM'] && target =~ /linux/
     sh %Q~
@@ -167,7 +174,7 @@ def create_package target
   end
   if !ENV['DIR_ONLY']
     sh "cd #{package_dir} && tar -czf #{package_file} ."
-    sh "rm -rf #{package_dir} pkg/vendor"
+    sh "rm -rf #{package_dir}"
   end
 end
 
