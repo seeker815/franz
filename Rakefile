@@ -62,11 +62,11 @@ include Franz
 `which gtar` # Necessary on OS X
 TAR = $?.exitstatus.zero? ? 'gtar' : 'tar'
 
-desc 'Package Franz for Linux and OS X'
-task packages: %w[ package:linux package:osx ]
+desc 'Package Franz for Docker, Linux and OS X'
+task native_packages: %w[ docker package:osx clean ]
 
 namespace :package do
-  desc 'Package Franz for Linux (x86_64)'
+  # desc 'Package Franz for Linux (x86_64)'
   task linux: [
     :bundle_install,
     "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-linux-x86_64.tar.gz",
@@ -76,7 +76,7 @@ namespace :package do
     create_package 'linux-x86_64'
   end
 
-  desc 'Package Franz for OS X'
+  # desc 'Package Franz for OS X'
   task osx: [
     :bundle_install,
     "pkg/traveling-ruby-#{TRAVELING_RUBY_VERSION}-osx.tar.gz",
@@ -86,22 +86,22 @@ namespace :package do
     create_package 'osx'
   end
 
-  desc 'Install gems to local directory'
+  # desc 'Install gems to local directory'
   task :bundle_install do
     if RUBY_VERSION !~ /^2\.2\./
       abort "You can only 'bundle install' using Ruby 2.2, because that's what Traveling Ruby uses."
     end
-    sh "rm -rf pkg/tmp pkg/vendor"
-    sh "mkdir pkg/tmp"
-    sh "cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib pkg/tmp"
+    sh 'rm -rf pkg/tmp pkg/vendor'
+    sh 'mkdir pkg/tmp'
+    sh 'cp -R franz.gemspec Readme.md LICENSE VERSION Gemfile Gemfile.lock bin lib pkg/tmp'
     Bundler.with_clean_env do
-      sh "cd pkg/tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path vendor --without development"
-      sh "mv pkg/tmp/vendor pkg"
+      sh 'cd pkg/tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path vendor --without development'
+      sh 'mv pkg/tmp/vendor pkg'
     end
-    sh "rm -rf pkg/tmp"
+    sh 'rm -rf pkg/tmp'
     if !ENV['NO_EXT']
-      sh "rm -f pkg/vendor/*/*/cache/*"
-      sh "rm -rf pkg/vendor/ruby/*/extensions"
+      sh 'rm -f pkg/vendor/*/*/cache/*'
+      sh 'rm -rf pkg/vendor/ruby/*/extensions'
       sh "find pkg/vendor/ruby/*/gems -name '*.so' | xargs rm -f"
       sh "find pkg/vendor/ruby/*/gems -name '*.bundle' | xargs rm -f"
       sh "find pkg/vendor/ruby/*/gems -name '*.o' | xargs rm -f"
@@ -192,4 +192,20 @@ end
 def download_runtime target
   sh 'cd pkg && curl -L -O --fail ' +
     "http://d6r77u77i8pq3.cloudfront.net/releases/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz"
+end
+
+
+# desc 'Package Franz into a Docker container'
+task docker: %w[ clean package:linux clean ] do
+  sh 'docker build -t franz .'
+  latest_image = "docker images | grep franz | head -n 1 | awk '{ print $3 }'"
+  sh "docker tag `#{latest_image}` sczizzo/franz:#{VERSION}"
+  sh "docker tag `#{latest_image}` sczizzo/franz:latest"
+  sh "docker push sczizzo/franz"
+end
+
+
+desc 'Remove leftover build artifacts'
+task :clean do
+  sh 'rm -rf pkg/franz*.{deb,gem,gz} pkg/vendor pkg/tmp'
 end

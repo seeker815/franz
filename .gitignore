@@ -6,6 +6,9 @@
 *.out
 *.pid
 *.swp
+*.pem
+*.crt
+*.key
 *.state
 *.checkpoint
 .DS_Store
