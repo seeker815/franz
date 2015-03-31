@@ -215,13 +215,14 @@ for Chef.
 
 ### Changelog
 
-#### v2.1.0
+#### v2.1
 
 - Self-contained packages for OS X and Linux thanks to [Traveling Ruby](http://phusion.github.io/traveling-ruby) and [FPM](https://github.com/jordansissel/fpm)
 - Dockerization using self-contained Linux package [available on the Docker Hub](https://registry.hub.docker.com/u/sczizzo/franz)
 - Running Franz without arguments now prints help text (i.e. `--config` is now required)
+- Allow single state file if no glob is used
 
-#### v2.0.0
+#### v2.0
 
 - Added new outputs: `StdOut`, `Kafka` (experimental)
 
