@@ -200,7 +200,7 @@ task docker: %w[ clean package:linux clean ] do
   sh 'docker build -t franz .'
   latest_image = "docker images | grep franz | head -n 1 | awk '{ print $3 }'"
   sh "docker tag `#{latest_image}` sczizzo/franz:#{VERSION}"
-  sh "docker tag `#{latest_image}` sczizzo/franz:latest"
+  sh "docker tag -f `#{latest_image}` sczizzo/franz:latest"
   sh "docker push sczizzo/franz"
 end
 
