@@ -171,15 +171,24 @@ module Franz
       return stats
     end
 
-    # Write a checkpoint file given the current state
+    # Write a checkpoint file given the current state. If a glob is provided,
+    # Franz will write a checkpoint with the current Unix timestamp, keeping
+    # the last two files for posterity
     def checkpoint
-      old_checkpoints = Dir[@checkpoint_glob].sort_by { |p| File.mtime p }
-      path = @checkpoint_path % Time.now
-      File.open(path, 'w') { |f| f.write Marshal.dump(state) }
-      old_checkpoints.pop # Keep last two checkpoints
-      old_checkpoints.map { |c| FileUtils.rm c }
+      path = if @checkpoint_path == @checkpoint_glob
+        File.open(@checkpoint_path, 'w') { |f| f.write Marshal.dump(state) }
+        @checkpoint_path
+      else
+        old_checkpoints = Dir[@checkpoint_glob].sort_by { |p| File.mtime p }
+        path = @checkpoint_path % Time.now
+        File.open(path, 'w') { |f| f.write Marshal.dump(state) }
+        old_checkpoints.pop # Keep last two checkpoints
+        old_checkpoints.map { |c| FileUtils.rm c }
+        path
+      end
       log.debug \
-        event: 'input checkpoint saved'
+        event: 'input checkpoint saved',
+        path: path
     end
 
   private
