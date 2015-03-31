@@ -217,7 +217,9 @@ for Chef.
 
 #### v2.1.0
 
-- Self-contained packages now available for OS X and Linux thanks to [Traveling Ruby](http://phusion.github.io/traveling-ruby) and [FPM](https://github.com/jordansissel/fpm).
+- Self-contained packages for OS X and Linux thanks to [Traveling Ruby](http://phusion.github.io/traveling-ruby) and [FPM](https://github.com/jordansissel/fpm)
+- Dockerization using self-contained Linux package [available on the Docker Hub](https://registry.hub.docker.com/u/sczizzo/franz)
+- Running Franz without arguments now prints help text (i.e. `--config` is now required)
 
 #### v2.0.0
 
