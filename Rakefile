@@ -102,9 +102,9 @@ namespace :package do
     if !ENV['NO_EXT']
       sh 'rm -f pkg/vendor/*/*/cache/*'
       sh 'rm -rf pkg/vendor/ruby/*/extensions'
-      sh "find pkg/vendor/ruby/*/gems -name '*.so' | xargs rm -f"
-      sh "find pkg/vendor/ruby/*/gems -name '*.bundle' | xargs rm -f"
-      sh "find pkg/vendor/ruby/*/gems -name '*.o' | xargs rm -f"
+      sh "find pkg/vendor/ruby/*/gems -name '*.so' -exec rm -rf {} \\;"
+      sh "find pkg/vendor/ruby/*/gems -name '*.bundle' -exec rm -rf {} \\;"
+      sh "find pkg/vendor/ruby/*/gems -name '*.o' -exec rm -rf {} \\;"
     end
   end
 end
