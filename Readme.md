@@ -224,6 +224,8 @@ for Chef.
 - Dockerization using self-contained Linux package [available on the Docker Hub](https://registry.hub.docker.com/u/sczizzo/franz)
 - Running Franz without arguments now prints help text (i.e. `--config` is now required)
 - Allow single state file if no glob is used
+- Handle `EACCESS` on `IO.read` gracefully
+- Remove default line limit
 
 #### v2.0
 
