@@ -80,7 +80,7 @@ module Franz
       ready_stats = with_lock do
         stats.map { |k,vhash| [ k, vhash[:val] ] }
       end
-      log.fatal \
+      log.info \
         event: 'stats',
         interval: @interval,
         stats: Hash[ready_stats]

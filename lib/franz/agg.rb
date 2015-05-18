@@ -149,7 +149,7 @@ module Franz
               event: 'buffer overflow',
               file: event[:path],
               size: size,
-              limmit: @buffer_limit
+              limit: @buffer_limit
           end
           if event[:line] =~ multiline
             buffered = buffer.flush(event[:path])

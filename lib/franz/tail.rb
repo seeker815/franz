@@ -27,8 +27,8 @@ module Franz
       @watch_events = opts[:watch_events] || []
       @tail_events  = opts[:tail_events]  || []
 
-      @read_limit = opts[:read_limit] || 10_240 # 100 KiB
-      @line_limit = opts[:line_limit] || 10_240 # 10 KiB
+      @read_limit = opts[:read_limit] || 16_384 # 16 KiB
+      @line_limit = opts[:line_limit] || nil    # no limit [KiB]
       @block_size = opts[:block_size] || 32_768 # 32 KiB
       @cursors    = opts[:cursors]    || Hash.new
       @logger     = opts[:logger]     || Logger.new(STDOUT)
@@ -121,6 +121,9 @@ module Franz
         rescue Errno::ENOENT
           data = nil
           reason_for_nil_data = 'noent'
+        rescue Errno::EACCES
+          data = nil
+          reason_for_nil_data = 'access'
         end
 
         if data.nil?

@@ -186,7 +186,10 @@ It's kinda like a JSON version of the Logstash config language:
           "required_acks": 0,
           "ack_timeout_ms": 1500,
           "socket_timeout_ms": 10000
-        }
+        },
+
+        // StdOut (implied if neither Kafka nor RabbitMQ configured)
+        "stdout": {},
 
         // Advanced configuration (optional)
         "stats_interval": 60, // Emit statistics periodically
