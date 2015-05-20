@@ -41,10 +41,11 @@ config = Franz::Config.new opts[:config]
 level = :info
 level = :debug if opts[:debug]
 level = :trace if opts[:trace]
+device = opts[:log] || $stdout
 colorize, prettify = false, false
-colorize, prettify = true, true if opts[:log].nil?
+colorize, prettify = true, true if device.tty? rescue false
 logger = Slog.new (config[:slog] || {}).merge \
-  out: opts[:log] || $stdout,
+  out: device,
   colorize: colorize,
   prettify: prettify,
   level: level
