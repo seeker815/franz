@@ -21,7 +21,7 @@ module Franz
   EMAIL    = 'sclemmer@bluejeans.com'
 
   # Bundled extensions
-  TRAVELING_RUBY_VERSION = '20150210-2.2.0'
+  TRAVELING_RUBY_VERSION = '20150517-2.2.2'
   SNAPPY_VERSION = '0.0.11'
   EM_VERSION = '1.0.4'
 
