@@ -68,14 +68,16 @@ module Franz
 
 
         @thread = Thread.new do
-          loop do
+          until @stop
             @lock.synchronize do
-              ready_messages = @messages
-              @messages = []
-              @kafka.send_messages ready_messages unless ready_messages.empty?
-              log.debug \
-                event: 'periodic flush',
-                num_messages: ready_messages.size
+              unless @messages.empty?
+                @kafka.send_messages @messages
+                @statz.inc :num_output, @messages.length
+                log.debug \
+                  event: 'periodic flush',
+                  num_messages: @messages.size
+                @messages = []
+              end
             end
 
             sleep @flush_interval
@@ -96,10 +98,9 @@ module Franz
             @lock.synchronize do
               @messages << Poseidon::MessageToSend.new(@topic, payload)
 
-              @statz.inc :num_output
-
               if @messages.size >= @flush_size
                 @kafka.send_messages @messages
+                @statz.inc :num_output, @messages.length
                 log.debug \
                   event: 'flush',
                   num_messages: @messages.size

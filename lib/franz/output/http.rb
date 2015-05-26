@@ -118,7 +118,7 @@ module Franz
         request.body = body
         @http.request(request)
       rescue EOFError, Errno::ECONNREFUSED, Errno::EPIPE
-        log.warn event: 'output reconnect'
+        log.warn event: 'output dropped'
         open_uri
         sleep 1
         retry
