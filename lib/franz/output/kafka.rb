@@ -52,16 +52,13 @@ module Franz
         @flush_interval = opts[:output].delete :flush_interval
         @topic = opts[:output].delete :topic
 
-        kafka_brokers = opts[:output].delete(:brokers) || %w[ localhost:9092 ]
-        kafka_client_id = opts[:output].delete :client_id
-        kafka_config = opts[:output].map { |k,v|
+        @kafka_brokers = opts[:output].delete(:brokers) || %w[ localhost:9092 ]
+        @kafka_client_id = opts[:output].delete :client_id
+        @kafka_config = opts[:output].map { |k,v|
           [ k, v.is_a?(String) ? v.to_sym : v ]
         }
 
-        @kafka = Poseidon::Producer.new \
-          kafka_brokers,
-          kafka_client_id,
-          Hash[kafka_config]
+        kafka_connect
 
         @lock = Mutex.new
         @messages = []
@@ -70,14 +67,10 @@ module Franz
         @thread = Thread.new do
           until @stop
             @lock.synchronize do
-              unless @messages.empty?
-                @kafka.send_messages @messages
-                @statz.inc :num_output, @messages.length
-                log.debug \
-                  event: 'periodic flush',
-                  num_messages: @messages.size
-                @messages = []
-              end
+              num_messages = kafka_send @messages
+              log.debug \
+                event: 'periodic flush',
+                num_messages: num_messages
             end
 
             sleep @flush_interval
@@ -99,12 +92,10 @@ module Franz
               @messages << Poseidon::MessageToSend.new(@topic, payload)
 
               if @messages.size >= @flush_size
-                @kafka.send_messages @messages
-                @statz.inc :num_output, @messages.length
+                num_messages = kafka_send @messages
                 log.debug \
                   event: 'flush',
-                  num_messages: @messages.size
-                @messages = []
+                  num_messages: num_messages
               end
             end
 
@@ -136,6 +127,27 @@ module Franz
 
     private
       def log ; @logger end
+
+      def kafka_connect
+        @kafka = Poseidon::Producer.new \
+          @kafka_brokers,
+          @kafka_client_id,
+          Hash[@kafka_config]
+      end
+
+      def kafka_send messages
+        return 0 if @messages.empty?
+        @kafka.send_messages @messages
+        @statz.inc :num_output, @messages.length
+        size = @messages.size
+        @messages = []
+        return size
+      rescue Poseidon::Errors::UnableToFetchMetadata
+        log.warn event: 'output dropped'
+        kafka_connect
+        sleep 1
+        retry
+      end
 
     end
   end

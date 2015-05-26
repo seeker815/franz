@@ -232,6 +232,7 @@ for Chef.
 - Running Franz without arguments now prints help text (i.e. `--config` is now required)
 - Rename `StdOut` to `Device`, no longer experimental
 - Allow single state file if no glob is used
+- Add autoreconnect logic to `Kafka` output
 - Handle `EACCESS` on `IO.read` gracefully
 - New `HTTP` output (experimental)
 - Remove default line limit
