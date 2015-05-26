@@ -82,10 +82,19 @@ elsif config[:output][:kafka]
     tags: config[:output][:tags],
     statz: statz
 
+elsif config[:output][:http]
+  Franz::Output::HTTP.new \
+    input: io,
+    output: config[:output][:http],
+    logger: logger,
+    tags: config[:output][:tags],
+    statz: statz
+
 else
-  Franz::Output::StdOut.new \
+  Franz::Output::Device.new \
     input: io,
     logger: logger,
+    output: config[:output][:device],
     tags: config[:output][:tags],
     statz: statz
 end

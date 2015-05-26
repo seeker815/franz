@@ -7,7 +7,7 @@ module Franz
   module Output
 
     # STDOUT output for Franz.
-    class StdOut
+    class Device
 
       # Start a new output in the background. We'll consume from the input queue
       # and ship events to STDOUT.
@@ -18,12 +18,14 @@ module Franz
         opts = {
           logger: Logger.new(STDOUT),
           tags: [],
-          input: []
+          input: [],
+          output: '/dev/stdout'
         }.deep_merge!(opts)
 
         @statz = opts[:statz] || Franz::Stats.new
         @statz.create :num_output, 0
 
+        @device = File.open(opts[:output], 'w')
         @logger = opts[:logger]
 
         @stop = false
@@ -37,7 +39,7 @@ module Franz
               event: 'publish',
               raw: event
 
-            puts JSON::generate(event)
+            @device.puts JSON::generate(event)
 
             @statz.inc :num_output
           end
@@ -60,6 +62,7 @@ module Franz
         return if @foreground
         @foreground = true
         @thread.kill
+        @device.close
         log.info event: 'output stopped'
       end
 

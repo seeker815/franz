@@ -188,8 +188,15 @@ It's kinda like a JSON version of the Logstash config language:
           "socket_timeout_ms": 10000
         },
 
-        // StdOut (implied if neither Kafka nor RabbitMQ configured)
-        "stdout": {},
+        // HTTP (experimental)
+        "http": {
+          "server": "http://localhost:3000",
+          "flush_interval": 5,
+          "flush_size": 500
+        },
+
+        // Device (STDOUT implied if neither Kafka nor RabbitMQ configured)
+        "device": "/dev/stdout",
 
         // Advanced configuration (optional)
         "stats_interval": 60, // Emit statistics periodically
@@ -223,8 +230,10 @@ for Chef.
 - Self-contained packages for OS X and Linux thanks to [Traveling Ruby](http://phusion.github.io/traveling-ruby) and [FPM](https://github.com/jordansissel/fpm)
 - Dockerization using self-contained Linux package [available on the Docker Hub](https://registry.hub.docker.com/u/sczizzo/franz)
 - Running Franz without arguments now prints help text (i.e. `--config` is now required)
+- Rename `StdOut` to `Device`, no longer experimental
 - Allow single state file if no glob is used
 - Handle `EACCESS` on `IO.read` gracefully
+- New `HTTP` output (experimental)
 - Remove default line limit
 
 #### v2.0
