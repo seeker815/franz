@@ -2,7 +2,8 @@ module Franz
   class InputConfig
     attr_reader :configs
 
-    def initialize configs
+    def initialize configs, logger=nil
+      @logger  = logger || Logger.new(STDOUT)
       @configs = configs
       @configs.map! do |c|
         normalized_config c
@@ -62,6 +63,8 @@ module Franz
 
 
   private
+    def log ; @logger end
+
     def normalized_config config
       config[:keep] = realize_regexps config[:keep]
       config[:drop] = realize_regexps config[:drop]

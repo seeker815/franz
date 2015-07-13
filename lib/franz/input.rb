@@ -86,7 +86,7 @@ module Franz
       watch_events = possibly_bounded_queue opts[:input][:watch_bound]
       tail_events  = possibly_bounded_queue opts[:input][:tail_bound]
 
-      ic = InputConfig.new opts[:input][:configs]
+      ic = InputConfig.new opts[:input][:configs], @logger
 
       @disover = Franz::Discover.new \
         input_config: ic,
