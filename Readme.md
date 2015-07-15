@@ -230,12 +230,14 @@ for Chef.
 - Self-contained packages for OS X and Linux thanks to [Traveling Ruby](http://phusion.github.io/traveling-ruby) and [FPM](https://github.com/jordansissel/fpm)
 - Dockerization using self-contained Linux package [available on the Docker Hub](https://registry.hub.docker.com/u/sczizzo/franz)
 - Running Franz without arguments now prints help text (i.e. `--config` is now required)
+- Don't watch files from previous executions unless there's a relevant configuration
 - Rename `StdOut` to `Device`, no longer experimental
 - Allow single state file if no glob is used
 - Add autoreconnect logic to `Kafka` output
 - Handle `EACCESS` on `IO.read` gracefully
 - New `HTTP` output (experimental)
 - Remove default line limit
+- Allow minimal configs
 
 #### v2.0
 
