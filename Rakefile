@@ -39,22 +39,6 @@ Rake::VersionTask.new
 # - http://phusion.github.io/traveling-ruby
 # - https://github.com/jordansissel/fpm
 #
-# I was able to archive my own extensions by packaging the software on the
-# target platform with the target-specific options (NO_EXT=true DIR_ONLY=true)
-# then extracting the resulting gem and its extensions into a tarball:
-#
-# target="linux-x86_64" # or "osx"
-# for ext in snappy-0.0.11 eventmachine-1.0.4 ; do
-#   name="${ext%%\-*}"
-#   version="${ext##*\-}"
-#   save="$(pwd)/$name"
-#   out="$(pwd)/$ext-$target.tar.gz"
-#   pushd franz/vendor/ruby
-#     tar -cvzf $out $(find . | grep $name | grep extensions)
-#   popd
-#   rm -f $save
-# done
-#
 require_relative 'lib/franz/metadata'
 
 include Franz
