@@ -41,7 +41,11 @@ module Franz
       if @play_catchup
         log.debug event: 'play catchup'
         stats.keys.each do |path|
-          stats[path][:size] = opts[:cursors][path] || 0
+          if @ic.type path
+            stats[path][:size] = opts[:cursors][path] || 0
+          else # we shouldn't be watching this file anymore
+            stats.delete path
+          end
         end
       end
 
