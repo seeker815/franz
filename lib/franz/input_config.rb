@@ -98,7 +98,9 @@ module Franz
     def patterns_for path, kind, memo
       memo.fetch path
     rescue KeyError
-      memo[path] = config(path)[kind]
+      c = config(path)
+      k = c ? c[kind] : []
+      memo[path] = k
     end
 
   end
