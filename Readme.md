@@ -235,6 +235,7 @@ for Chef.
 - Allow single state file if no glob is used
 - Add autoreconnect logic to `Kafka` output
 - Capture errors when parsing structured logs
+- Add `FNM_EXTGLOB` flag for better glob matching
 - Handle `EACCESS` on `IO.read` gracefully
 - New `HTTP` output (experimental)
 - Remove default line limit

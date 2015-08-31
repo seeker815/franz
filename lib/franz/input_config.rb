@@ -43,10 +43,10 @@ module Franz
     rescue KeyError
       configs.each do |config|
         type = config[:type] if config[:includes].any? { |glob|
-          included = File.fnmatch? glob, path
+          included = File.fnmatch? glob, path, File::FNM_EXTGLOB
           excludes = !config[:excludes].nil?
           excluded = excludes && config[:excludes].any? { |exlude|
-            File.fnmatch? exlude, File::basename(path)
+            File.fnmatch? exlude, File::basename(path), File::FNM_EXTGLOB
           }
           included && !excluded
         }

@@ -102,7 +102,7 @@ private
         Dir[glob].each do |path|
           next if known.include? path
           next if config[:excludes].any? { |exclude|
-            File.fnmatch? exclude, File::basename(path)
+            File.fnmatch? exclude, File::basename(path), File::FNM_EXTGLOB
           }
           discovered.push path
         end
