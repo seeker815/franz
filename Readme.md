@@ -234,6 +234,7 @@ for Chef.
 - Rename `StdOut` to `Device`, no longer experimental
 - Allow single state file if no glob is used
 - Add autoreconnect logic to `Kafka` output
+- Capture errors when parsing structured logs
 - Handle `EACCESS` on `IO.read` gracefully
 - New `HTTP` output (experimental)
 - Remove default line limit

@@ -124,11 +124,19 @@ module Franz
       event = { type: t, host: @@host, path: path, '@seq' => s }
 
       if @ic.json? path
-        return if m =~ /^#/
-        event.merge! JSON::parse(m)
+        begin
+          event.merge! JSON::parse(m)
+        rescue JSON::ParserError
+          log.error \
+            event: 'json parse failed',
+            file: path,
+            message: m
+          event.merge! message: m, _err: 'json parse failed'
+        end
       else
         event.merge! message: m
       end
+
       agg_events.push event
     end
 
