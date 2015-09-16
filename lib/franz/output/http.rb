@@ -57,9 +57,16 @@ module Franz
 
         @thread = Thread.new do
           until @stop
-            event = JSON::generate(opts[:input].shift)
+            event = opts[:input].shift
+
+            unless opts[:tags].empty?
+              event['tags'] ||= []
+              event['tags']  += opts[:tags]
+            end
+
+            payload = JSON::generate event
             @lock.synchronize do
-              enqueue event
+              enqueue payload
             end
 
             log.trace \

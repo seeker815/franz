@@ -238,6 +238,8 @@ for Chef.
 - Add `FNM_EXTGLOB` flag for better glob matching
 - Handle `EACCESS` on `IO.read` gracefully
 - New `HTTP` output (experimental)
+- Allow for `nil` or `false` multiline configs
+- Implement missing (yet documented) "tags" feature
 - Remove default line limit
 - Allow minimal configs
 

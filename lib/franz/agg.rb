@@ -146,7 +146,7 @@ module Franz
         event: 'capture',
         raw: event
       multiline = @ic.config(event[:path])[:multiline] rescue nil
-      if multiline.nil?
+      unless multiline
         @statz.inc :num_lines
         enqueue event[:path], event[:line] unless event[:line].empty?
       else

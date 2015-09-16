@@ -35,6 +35,11 @@ module Franz
           until @stop
             event = opts[:input].shift
 
+            unless opts[:tags].empty?
+              event['tags'] ||= []
+              event['tags']  += opts[:tags]
+            end
+
             log.trace \
               event: 'publish',
               raw: event
