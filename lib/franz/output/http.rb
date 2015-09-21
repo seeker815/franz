@@ -1,4 +1,5 @@
 require 'net/http'
+require 'net/https'
 require 'thread'
 require 'fiber'
 require 'json'
@@ -25,7 +26,13 @@ module Franz
           output: {
             server: 'http://localhost:3000',
             flush_size: 500,
-            flush_interval: 10
+            flush_interval: 10,
+            ssl: {
+              cert_file: nil,
+              key_file: nil,
+              ca_file: nil,
+              verify_mode: nil
+            }
           }
         }.deep_merge!(opts)
 
@@ -39,6 +46,9 @@ module Franz
 
         server = opts[:output].delete :server
         @uri   = URI(server)
+        @ssl   = if @uri.scheme =~ /https/
+          opts[:output].delete :ssl
+        end
         open_uri
 
         @flush_size = opts[:output][:flush_size]
@@ -103,6 +113,38 @@ module Franz
 
       def open_uri
         @http = Net::HTTP.new(@uri.host, @uri.port)
+
+        if @ssl
+          @http.use_ssl = true
+
+          if cert_file = @ssl['cert_file']
+            cert = File.read cert_file
+            @http.cert = OpenSSL::X509::Certificate.new(cert)
+          end
+
+          if key_file = @ssl['key_file']
+            key = File.read key_file
+            @http.key = OpenSSL::PKey::RSA.new(key)
+          end
+
+          if @ssl['ca_file']
+            @http.ca_file = @ssl['ca_file']
+          end
+
+          case @ssl['verify_mode']
+          when 'verify_peer'
+            @http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+          when 'verify_none'
+            @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          when 'verify_client_once'
+            @http.verify_mode = OpenSSL::SSL::VERIFY_CLIENT_ONCE
+          when 'verify_fail_if_no_peer_cert'
+            @http.verify_mode = OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
+          when nil
+          else
+            raise 'Invalid "verify_mode" specified'
+          end
+        end
       end
 
       def enqueue event

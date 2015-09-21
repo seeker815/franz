@@ -1,5 +1,7 @@
 *~
 *.gz
+*.cnf
+*.csr
 *.gem
 *.deb
 *.log
@@ -9,6 +11,7 @@
 *.pem
 *.crt
 *.key
+*.cert
 *.state
 *.checkpoint
 .DS_Store
