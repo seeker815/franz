@@ -138,8 +138,8 @@ def create_package target
   sh "mkdir #{package_dir}/franz/vendor/.bundle"
   sh "cp pkg/bundler-config #{package_dir}/franz/vendor/.bundle/config"
   if !ENV['NO_EXT']
-    sh "#{TAR} -xzf pkg/snappy-#{SNAPPY_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor/ruby"
-    sh "#{TAR} -xzf pkg/eventmachine-#{EM_VERSION}-#{target}.tar.gz -C #{package_dir}/franz/vendor/ruby"
+    sh "#{TAR} -xzf pkg/snappy-#{SNAPPY_VERSION}.tar.gz -C #{package_dir}/franz/vendor/ruby"
+    sh "#{TAR} -xzf pkg/eventmachine-#{EM_VERSION}.tar.gz -C #{package_dir}/franz/vendor/ruby"
   end
   if !ENV['NO_FPM'] && target =~ /linux/
     sh %Q~
@@ -167,15 +167,13 @@ def download_extension name, platform
   when 'snappy' ; SNAPPY_VERSION
   when 'eventmachine' ; EM_VERSION
   end
-  url = 'https://dl.dropboxusercontent.com/u/431514/%s-%s-%s.tar.gz' % [
-    name, version, platform
-  ]
+  url = "#{TRAVELING_RUBY_BUCKET}/releases/traveling-ruby-gems-#{TRAVELING_RUBY_VERSION}-#{platform}/#{name}-#{version}.tar.gz"
   sh 'cd pkg && curl -L -O --fail ' + url
 end
 
 def download_runtime target
   sh 'cd pkg && curl -L -O --fail ' +
-    "http://d6r77u77i8pq3.cloudfront.net/releases/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz"
+    "#{TRAVELING_RUBY_BUCKET}/releases/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz"
 end
 
 

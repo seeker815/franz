@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.description = Franz::SUMMARY + '.'
 
   s.add_runtime_dependency 'slog', '~> 1.1.0'
-  s.add_runtime_dependency 'bunny', '~> 1.6.0'
+  s.add_runtime_dependency 'bunny', '~> 2.2.0'
   s.add_runtime_dependency 'trollop', '~> 2.1.0'
   s.add_runtime_dependency 'colorize', '~> 0.7.0'
   s.add_runtime_dependency 'deep_merge', '~> 1.0.0'
