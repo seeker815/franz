@@ -87,7 +87,7 @@ module Franz
               event['tags']  += opts[:tags]
             end
 
-            log.trace \
+            log.debug \
               event: 'publish',
               raw: event
 

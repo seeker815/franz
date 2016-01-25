@@ -79,7 +79,7 @@ module Franz
               enqueue payload
             end
 
-            log.trace \
+            log.debug \
               event: 'publish',
               raw: event
           end

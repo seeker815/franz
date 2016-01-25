@@ -23,7 +23,6 @@ parser = Trollop::Parser.new do
   EOS
   opt :config, 'Configuration file to use', type: :string, required: true
   opt :debug,  'Enable debugging output', default: false
-  opt :trace,  'Enable trace output', default: false
   opt :log,    'Log to file, not STDOUT', type: :string, default: nil
 end
 
@@ -40,7 +39,6 @@ config = Franz::Config.new opts[:config]
 # Set up Slog to send pretty, colored output to STDOUT, compact to FILE
 level = :info
 level = :debug if opts[:debug]
-level = :trace if opts[:trace]
 device = opts[:log] || $stdout
 colorize, prettify = false, false
 colorize, prettify = true, true if device.tty? rescue false

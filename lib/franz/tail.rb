@@ -77,7 +77,7 @@ module Franz
 
 
     def read path, size
-      log.trace \
+      log.debug \
         event: 'read',
         file: path,
         size: size
@@ -173,7 +173,7 @@ module Franz
 
 
     def close path
-      log.trace event: 'close', file: path
+      log.debug event: 'close', file: path
       tail_events.push path: path, line: buffer[path].flush
       @nil_read.delete path
       @cursors[path] = 0
@@ -182,7 +182,7 @@ module Franz
 
     def handle event
       path, size = event[:path], event[:size]
-      log.trace \
+      log.debug \
         event: 'handle',
         raw: event
       case event[:name]

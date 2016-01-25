@@ -90,7 +90,7 @@ module Franz
 
     def enqueue path, message
       if @ic.drop? path, message
-        log.trace \
+        log.debug \
           event: 'dropped',
           file: path,
           message: message
@@ -98,7 +98,7 @@ module Franz
       end
 
       unless @ic.keep? path, message
-        log.trace \
+        log.debug \
           event: 'unkept',
           file: path,
           message: message
@@ -107,14 +107,14 @@ module Franz
 
       t = @ic.type path
       if t.nil?
-        log.trace \
+        log.debug \
           event: 'enqueue skipped',
           file: path,
           message: message
         return
       end
 
-      log.trace \
+      log.debug \
         event: 'enqueue',
         file: path,
         message: message
@@ -142,7 +142,7 @@ module Franz
 
     def capture
       event = tail_events.shift
-      log.trace \
+      log.debug \
         event: 'capture',
         raw: event
       multiline = @ic.config(event[:path])[:multiline] rescue nil
@@ -153,7 +153,7 @@ module Franz
         lock[event[:path]].synchronize do
           size = buffer.size(event[:path])
           if size > @buffer_limit
-            log.trace \
+            log.debug \
               event: 'buffer overflow',
               file: event[:path],
               size: size,

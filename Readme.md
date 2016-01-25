@@ -85,7 +85,6 @@ Just call for help!
     Options:
       --config, -c <s>:   Configuration file to use
            --debug, -d:   Enable debugging output
-           --trace, -t:   Enable trace output
          --log, -l <s>:   Log to file, not STDOUT
          --version, -v:   Print version and exit
             --help, -h:   Show this message

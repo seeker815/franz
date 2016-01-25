@@ -95,7 +95,7 @@ module Franz
     def log ; @logger end
 
     def enqueue name, path, size=nil
-      log.trace \
+      log.debug \
         event: 'enqueue',
         name: name,
         file: path,

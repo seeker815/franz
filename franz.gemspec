@@ -13,10 +13,10 @@ Gem::Specification.new do |s|
   s.summary     = Franz::SUMMARY
   s.description = Franz::SUMMARY + '.'
 
-  s.add_runtime_dependency 'slog', '~> 1.1.0'
-  s.add_runtime_dependency 'bunny', '~> 2.2.0'
-  s.add_runtime_dependency 'trollop', '~> 2.1.0'
-  s.add_runtime_dependency 'colorize', '~> 0.7.0'
+  s.add_runtime_dependency 'slog', '~> 2'
+  s.add_runtime_dependency 'bunny', '~> 2'
+  s.add_runtime_dependency 'trollop', '~> 2.1'
+  s.add_runtime_dependency 'colorize', '~> 0.7'
   s.add_runtime_dependency 'deep_merge', '~> 1.0.0'
   s.add_runtime_dependency 'poseidon', '~> 0.0.5'
 
