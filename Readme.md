@@ -63,7 +63,7 @@ You can build a gem from this repository, or use RubyGems:
 Just call for help!
 
     $ franz --help
-    
+
           .--.,
         ,--.'  \  __  ,-.                 ,---,        ,----,
         |  | /\/,' ,'/ /|             ,-+-. /  |     .'   .`|
@@ -75,13 +75,13 @@ Just call for help!
         |  | |  |  , ;  /  /  ,.  | |   | |--'  ./__;     .'
         |  : \   ---'  ;  :   .'   \|   |/      ;   |  .'
         |  |,'         |  ,     .-./'---'       `---'
-        `--'            `--`---'                       v2.1.0
-    
-    
+        `--'            `--`---'                       v2.2.0
+
+
     Aggregate log file events and send them elsewhere
-    
+
     Usage: franz [<options>]
-    
+
     Options:
       --config, -c <s>:   Configuration file to use
            --debug, -d:   Enable debugging output
@@ -210,9 +210,9 @@ At Blue Jeans, we deploy Franz with Upstart. Here's a minimal config:
 
     #!upstart
     description "franz"
-    
+
     console log
-    
+
     start on startup
     stop on shutdown
     respawn
@@ -223,6 +223,11 @@ We actually use the [`bjn_franz` cookbook](https://github.com/sczizzo/bjn-franz-
 for Chef.
 
 ### Changelog
+
+### v2.2
+
+- Updated dependencies
+- No more `TRACE`-level logging (demoted to `DEBUG`)
 
 #### v2.1
 
