@@ -226,8 +226,10 @@ for Chef.
 
 ### v2.2
 
-- Updated dependencies
+- Updated dependencies, improved packaging
 - No more `TRACE`-level logging (demoted to `DEBUG`)
+- Better command-line options backed by environment variables
+
 
 #### v2.1
 

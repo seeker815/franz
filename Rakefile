@@ -152,6 +152,8 @@ def create_package target
         --vendor "#{AUTHOR}" \
         --url "#{HOMEPAGE}" \
         --package "#{output}" \
+        --after-install ./pkg/post-install.sh \
+        --after-upgrade ./pkg/post-install.sh \
         franz.sh=/usr/local/bin/franz \
         franz=/opt
     ~
@@ -178,7 +180,7 @@ end
 
 
 # desc 'Package Franz into a Docker container'
-task docker: %w[ clean package:linux clean ] do
+task docker: %w[ clean package:linux ] do
   sh 'docker build -t franz .'
   latest_image = "docker images | grep franz | head -n 1 | awk '{ print $3 }'"
   sh "docker tag `#{latest_image}` sczizzo/franz:#{VERSION}"
@@ -190,4 +192,9 @@ end
 desc 'Remove leftover build artifacts'
 task :clean do
   sh 'rm -rf pkg/franz*.{deb,gem,gz} pkg/vendor pkg/tmp'
+end
+
+desc 'Remove all build artifacts'
+task :wipe do
+  sh 'rm -rf pkg/*.{deb,gem,gz} pkg/vendor pkg/tmp'
 end

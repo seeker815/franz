@@ -21,13 +21,18 @@ parser = Trollop::Parser.new do
 
     Options:
   EOS
-  opt :config, 'Configuration file to use', type: :string, required: true
-  opt :debug,  'Enable debugging output', default: false
-  opt :log,    'Log to file, not STDOUT', type: :string, default: nil
+
+  opt :config, 'Configuration file to use [FRANZ_CONFIG] (required)', \
+    type: :string, required: !ENV['FRANZ_CONFIG'], default: ENV['FRANZ_CONFIG']
+
+  opt :log, 'Log to file, not STDOUT [FRANZ_LOG] (optional)', \
+    type: :string, required: false, default: ENV['FRANZ_LOG']
+
+  opt :debug, 'Enable debugging output [FRANZ_DEBUG]', \
+    default: !!ENV['FRANZ_DEBUG']
 end
 
 opts = Trollop.with_standard_exception_handling(parser) do
-  raise Trollop::HelpNeeded if ARGV.empty?
   parser.parse ARGV
 end
 
